@@ -1,0 +1,15 @@
+Source: salt-formula-maas
+Maintainer: Ales Komarek <ales.komarek@tcpcloud.eu>
+Section: admin
+Priority: optional
+Build-Depends: debhelper (>= 9)
+Standards-Version: 3.9.6
+Homepage: http://www.tcpcloud.eu
+Vcs-Browser: https://github.com/tcpcloud/salt-formula-maas
+Vcs-Git: https://github.com/tcpcloud/salt-formula-maas.git
+
+Package: salt-formula-maas
+Architecture: all
+Depends: ${misc:Depends}, salt-master, reclass
+Description: maas salt formula
+ Install and configure maas system.

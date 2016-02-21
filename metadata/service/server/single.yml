@@ -1,0 +1,10 @@
+applications:
+- maas
+classes:
+- service.maas.support
+parameters:
+  maas:
+    server:
+      enabled: true
+      bind:
+        address: 0.0.0.0
