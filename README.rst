@@ -1,6 +1,6 @@
 
 ==================
-Metal as a SErvice
+Metal as a Service
 ==================
 
 Service maas description

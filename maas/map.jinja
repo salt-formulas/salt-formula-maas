@@ -1,10 +1,12 @@
 {%- load_yaml as base_defaults %}
-
 Debian:
   pkgs:
   - maas
   - maas-region-controller
   - maas-cluster-controller
+  bind:
+    address: 0.0.0.0
+    port: 8080
 {%- endload %}
 
-{%- set server = salt['grains.filter_by'](base_defaults, merge=salt['pillar.get']('maas:server')) %}
+{%- set server = salt['grains.filter_by'](base_defaults, merge=salt['pillar.get']('maas:server', {})) %}
