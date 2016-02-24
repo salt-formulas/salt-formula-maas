@@ -4,3 +4,4 @@ parameters:
       repo:
         maas:
           source: deb http://ppa.launchpad.net/maas/next/ubuntu trusty main
+          key_url: salt://maas/files/vendor_key.gpg
