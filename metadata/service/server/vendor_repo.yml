@@ -3,4 +3,4 @@ parameters:
     system:
       repo:
         maas:
-          
+          source: deb http://ppa.launchpad.net/maas/next/ubuntu trusty main
