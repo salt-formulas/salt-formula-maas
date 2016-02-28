@@ -34,16 +34,17 @@ late_commands:
   salt_00_announce: ["curtin", "in-target", "--", "echo", "'### Installing and Configuring Salt Minion ###'"]
 
 {% endraw %}
-{% raw %}
+
   salt_01_install: ["curtin", "in-target", "--", "apt-get", "-y", "install", "salt-minion"]
-  salt_02_hostname_set: ["curtin", "in-target", "--", "echo", "{{node.hostname}}.dc01.tcpcloud.eu"]
-  salt_03_hostname_get: ["curtin", "in-target", "--", "sh", "-c", "echo 'id: {{node.hostname}}.dc01.tcpcloud.eu' >> /etc/salt/minion"]
+
+  salt_02_hostname_set: ["curtin", "in-target", "--", "echo", "{% raw %}{{node.hostname}}{% endraw %}.{{pillar.linux.system.domain}}"]
+  salt_03_hostname_get: ["curtin", "in-target", "--", "sh", "-c", "echo 'id: {% raw %}{{node.hostname}}{% endraw %}.{{pillar.linux.system.domain}}' >> /etc/salt/minion"]
   salt_04_master: ["curtin", "in-target", "--", "sh", "-c", "echo 'master: 10.0.170.7' >> /etc/salt/minion"]
   salt_05_announce: ["curtin", "in-target", "--", "echo", "'### Salt Minion is configured successfully ###'"]
   salt_06_show_conf_hostname: ["curtin", "in-target", "--", "cat", "/etc/salt/minion"]
   salt_07_show_hosts: ["curtin", "in-target", "--", "cat", "/etc/hosts"]
 
-
+{% raw %}
 power_state:
   mode: reboot
 
