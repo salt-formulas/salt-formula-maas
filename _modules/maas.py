@@ -87,7 +87,7 @@ def cluster_get(cluster_name=None, **connection_args):
     
     for cluster in object_list:
         if cluster.get('cluster_name') == cluster_name:
-            return {cluster.get('name'): cluster}
+            return {cluster.get('cluster_name'): cluster}
     return {'Error': 'Could not find specified cluster'}
 
 
@@ -111,7 +111,7 @@ def cluster_list(**connection_args):
     object_list = json.loads(response)    
 
     for cluster in object_list:
-        ret[cluster.get('name')] = cluster
+        ret[cluster.get('cluster_name')] = cluster
     return ret
 
 
@@ -158,3 +158,46 @@ def cluster_delete(cluster_name=None, **connection_args):
         if cluster.get('url') == cluster_url:
             return maas.deleteprojectcluster(project['id'], cluster['id'])
     return {'Error': 'Could not find cluster'}
+
+
+def cluster_update(cluster_id=None, old_cluster_name=None, new_cluster_name=None, domain=None, status=None, **connection_args):
+    '''
+    Update information in specific MAAS cluster
+
+    CLI Examples:
+
+    .. code-block:: bash
+
+        salt '*' maas.cluster_update cluster_id cluster_name dns_name status 
+    '''
+    maas = _auth(**connection_args)
+    
+    cluster = {}
+
+    if not cluster_id and old_cluster_name:
+        cluster = cluster_get(old_cluster_name)
+        if cluster.get("Error"):
+            return cluster
+        else:
+            cluster_id = cluster_get(old_cluster_name).get(old_cluster_name).get("uuid")
+
+    else:
+        return {'Error': 'No cluster id or name specified'}
+	        
+    if new_cluster_name:
+        cluster["cluster_name"] = new_cluster_name  
+
+    if domain:
+        cluster["name"] = domain
+    
+    if status:
+	cluster["status"] = status
+    
+    LOG.debug("Cluster id: " + cluster_id)
+    LOG.debug("New cluster info: " + str(cluster))
+   
+    response = maas.put(u"nodegroups/" + cluster_id + "/", **cluster)
+    
+    #TODO check response status
+    return {'Status': True}
+
