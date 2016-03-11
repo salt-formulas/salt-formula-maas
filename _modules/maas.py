@@ -74,21 +74,18 @@ def cluster_get(cluster_name=None, **connection_args):
         salt '*' maas.cluster_get cluster
     '''
     maas = _auth(**connection_args)
-    if project_name:
-        project = _get_project(maas, project_name)
-    else:
-        project = _get_project_by_id(maas, project_id)
-    if not project:
-        return {'Error': 'Unable to resolve project'}
-    for cluster in maas.getprojectclusters(project.get('id'), per_page=PER_PAGE):
-        if cluster.get('url') == cluster_url:
-            return {cluster.get('url'): cluster}
-    return {'Error': 'Could not find cluster for the specified project'}
+
+    object_list = maas.get(u"nodegroups/", "list").read()
+
+    for cluster in object_list:
+        if cluster.get('name') == cluster_name:
+            return {cluster.get('name'): cluster}
+    return {'Error': 'Could not find specified cluster'}
 
 
 def cluster_list(**connection_args):
     '''
-    Return a list of available clusters for project
+    Return a list of MAAS clusters
 
     CLI Example:
 
@@ -99,12 +96,10 @@ def cluster_list(**connection_args):
     maas = _auth(**connection_args)
     ret = {}
 
-    project = _get_project(maas, project)
+    object_list = maas.get(u"nodegroups/", "list").read()
 
-    if not project:
-        return {'Error': 'Unable to resolve project'}
-    for cluster in maas.getprojectclusters(project.get('id')):
-        ret[cluster.get('url')] = cluster
+    for cluster in object_list:
+        ret[cluster.get('name')] = cluster
     return ret
 
 
