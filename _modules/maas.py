@@ -16,6 +16,8 @@ from __future__ import absolute_import
 import logging
 import os
 
+import json
+
 LOG = logging.getLogger(__name__)
 
 # Import third party libs
@@ -56,6 +58,8 @@ def _auth(**connection_args):
     api_token = get('token')
     api_url = get('url', 'https://localhost/')
 
+    LOG.debug("MAAS url: " + api_url)
+    LOG.debug("MAAS token: " + api_token)
     auth = MAASOAuth(*api_token.split(":"))
     dispatcher = MAASDispatcher()
     client = MAASClient(auth, dispatcher, api_url)
@@ -96,7 +100,11 @@ def cluster_list(**connection_args):
     maas = _auth(**connection_args)
     ret = {}
 
-    object_list = maas.get(u"nodegroups/", "list").read()
+    response = maas.get(u"nodegroups/", "list").read()
+    
+    LOG.debug("Clusters in maas: " + response )
+    
+    object_list = json.loads(response)    
 
     for cluster in object_list:
         ret[cluster.get('name')] = cluster
