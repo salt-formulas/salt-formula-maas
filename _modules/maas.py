@@ -79,10 +79,14 @@ def cluster_get(cluster_name=None, **connection_args):
     '''
     maas = _auth(**connection_args)
 
-    object_list = maas.get(u"nodegroups/", "list").read()
+    response = maas.get(u"nodegroups/", "list").read()
+    LOG.debug("Response: " + response)
+    
+    object_list = json.loads(response)
 
+    
     for cluster in object_list:
-        if cluster.get('name') == cluster_name:
+        if cluster.get('cluster_name') == cluster_name:
             return {cluster.get('name'): cluster}
     return {'Error': 'Could not find specified cluster'}
 
