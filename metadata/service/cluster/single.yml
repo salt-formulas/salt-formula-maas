@@ -1,0 +1,12 @@
+applications:
+- maas
+classes:
+- service.maas.support
+parameters:
+  maas:
+    cluster:
+      enabled: true
+      version: '2'
+      region: 
+        host: localhost
+        port: 5240

@@ -1,9 +1,9 @@
-{%- from "maas/map.jinja" import server with context %}
-{%- if server.enabled %}
+{%- from "maas/map.jinja" import region with context %}
+{%- if region.enabled %}
 
-mass_server_packages:
+mass_region_packages:
   pkg.installed:
-    - names: {{ server.pkgs }}
+    - names: {{ region.pkgs }}
 
 /etc/maas/region.conf:
   file.managed:
@@ -20,6 +20,6 @@ mass_server_packages:
   - group: root
   - mode: 644
   - require:
-    - pkg: mass_server_packages
+    - pkg: mass_region_packages
 
 {%- endif %}

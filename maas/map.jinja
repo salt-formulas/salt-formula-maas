@@ -2,11 +2,41 @@
 Debian:
   pkgs:
   - maas
-  - maas-region-controller
-  - maas-cluster-controller
   bind:
     address: 0.0.0.0
-    port: 8080
+    port: 80
 {%- endload %}
 
 {%- set server = salt['grains.filter_by'](base_defaults, merge=salt['pillar.get']('maas:server', {})) %}
+
+{%- set version = salt['pillar.get']('maas:cluster:version') %}
+
+{%- load_yaml as cluster_defaults %}
+Debian:
+  pkgs:
+  {% if version == '1' %}
+  - maas-cluster-controller
+  {% elif version == '2' %}
+  - maas-rack-controller
+  {% endif %}
+  config:
+  {% if version == '1' %}
+  - cluster: /etc/maas/cluster.conf
+  {% elif version == '2' %}
+  - cluster: /etc/maas/rackd.conf
+  {% endif %}
+{%- endload %}
+
+{%- set cluster = salt['grains.filter_by'](cluster_defaults, merge=salt['pillar.get']('maas:cluster', {})) %}
+
+{%- load_yaml as region_defaults %}
+Debian:
+  pkgs:
+  - maas-region-controller
+  service: maas
+  bind:
+    host: {{ grains.item.ivp4.0 }}
+    port: 80
+{%- endload %}
+
+{%- set region = salt['grains.filter_by'](region_defaults, merge=salt['pillar.get']('maas:region', {})) %}
