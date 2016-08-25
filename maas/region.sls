@@ -1,7 +1,7 @@
 {%- from "maas/map.jinja" import region with context %}
 {%- if region.enabled %}
 
-mass_region_packages:
+maas_region_packages:
   pkg.installed:
     - names: {{ region.pkgs }}
 
@@ -10,7 +10,7 @@ mass_region_packages:
   - source: salt://maas/files/region.conf
   - template: jinja
   - require:
-    - pkg: mass_region_packages
+    - pkg: maas_region_packages
 
 /etc/maas/preseeds/curtin_userdata_amd64_generic_trusty:
   file.managed:
@@ -20,6 +20,8 @@ mass_region_packages:
   - group: root
   - mode: 644
   - require:
-    - pkg: mass_region_packages
+    - pkg: maas_region_packages
 
 {%- endif %}
+
+

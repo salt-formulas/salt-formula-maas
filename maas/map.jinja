@@ -35,7 +35,7 @@ Debian:
   - maas-region-controller
   service: maas
   bind:
-    host: {{ grains.item.ivp4.0 }}
+    host: {{ grains.ipv4[0] }}
     port: 80
 {%- endload %}
 

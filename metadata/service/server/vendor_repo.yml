@@ -3,5 +3,5 @@ parameters:
     system:
       repo:
         maas:
-          source: deb http://ppa.launchpad.net/maas/stable/ubuntu trusty main
+          source: deb http://ppa.launchpad.net/maas/stable/ubuntu xenial main
           key_url: salt://maas/files/vendor_key.gpg
