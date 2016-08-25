@@ -21,7 +21,7 @@ Debian:
   {% endif %}
   config:
   {% if version == '1' %}
-  - cluster: /etc/maas/cluster.conf
+  - cluster: /etc/maas/clusterd.conf
   {% elif version == '2' %}
   - cluster: /etc/maas/rackd.conf
   {% endif %}

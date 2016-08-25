@@ -5,9 +5,9 @@ maas_region_packages:
   pkg.installed:
     - names: {{ region.pkgs }}
 
-/etc/maas/region.conf:
+/etc/maas/regiond.conf:
   file.managed:
-  - source: salt://maas/files/region.conf
+  - source: salt://maas/files/regiond.conf
   - template: jinja
   - require:
     - pkg: maas_region_packages
