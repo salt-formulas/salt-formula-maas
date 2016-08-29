@@ -22,6 +22,22 @@ maas_region_packages:
   - require:
     - pkg: maas_region_packages
 
+maas_region_services:
+  service.running:
+  - enable: true
+  - names: {{ region.services }}
+  - require:
+    - cmd: maas_region_syncdb
+  - watch:
+    - file: /etc/maas/regiond.conf
+
+maas_region_syncdb:
+  cmd.run:
+  - names:
+    - maas-region syncdb
+  - require:
+    - file: /etc/maas/regiond.conf
+
 {%- endif %}
 
 

@@ -33,7 +33,8 @@ Debian:
 Debian:
   pkgs:
   - maas-region-controller
-  service: maas
+  services:
+  - maas-regiond
   bind:
     host: {{ grains.ipv4[0] }}
     port: 80
