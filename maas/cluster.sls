@@ -45,7 +45,7 @@ maas_cluster_services:
   - enable: true
   - names: {{ cluster.services }}
   - require:
-    - cmd: /etc/maas/rackd.conf
+    - file: /etc/maas/rackd.conf
   - watch:
     - file: /etc/maas/rackd.conf
 
