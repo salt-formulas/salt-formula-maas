@@ -33,7 +33,7 @@ maas_cluster_packages:
 
 /etc/maas/rackd.conf:
   file.line:
-  - content: 'maas_url: {{ cluster.region.host }}/MAAS'
+  - content: 'maas_url: http://{{ cluster.region.host }}/MAAS'
   - match: 'maas_url*'
   - mode: replace
   - location: end

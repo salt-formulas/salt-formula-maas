@@ -6,5 +6,6 @@ parameters:
   maas:
     cluster:
       enabled: true
-      port: 80
-      host: localhost
+      region:
+        port: 80
+        host: localhost
