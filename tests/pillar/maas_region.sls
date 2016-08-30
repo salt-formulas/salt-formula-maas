@@ -1,6 +1,8 @@
 maas:
   cluster:
     enabled: true
+    region:
+      host: localhost
     role: master
   region:
     bind:
