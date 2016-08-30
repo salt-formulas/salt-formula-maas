@@ -40,4 +40,13 @@ maas_cluster_packages:
   - require:
     - pkg: maas_cluster_packages
 
+maas_cluster_services:
+  service.running:
+  - enable: true
+  - names: {{ cluster.services }}
+  - require:
+    - cmd: /etc/maas/rackd.conf
+  - watch:
+    - file: /etc/maas/rackd.conf
+
 {%- endif %}
