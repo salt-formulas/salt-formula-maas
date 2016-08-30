@@ -1,17 +1,22 @@
 {%- from "maas/map.jinja" import cluster with context %}
 {%- if cluster.enabled %}
 
-maas_cluster_packages:
-  pkg.installed:
-    - names: {{ cluster.pkgs }}
+{%- if cluster.role == 'slave' %}
 
-{{ cluster.config.cluster }}:
-  file.line:
-  - content: 'maas_url: {{ cluster.region.host }}:{{ cluster.region.port }}'
-  - match: 'maas_url*'
-  - mode: replace
-  - location: end
-  - require:
-    - pkg: maas_cluster_packages
+maas_cluster_remove_secrets:
+  cmd.run:
+  - name: "rm -f /var/lib/maas/maas_id /var/lib/maas/secret && touch /var/lib/maas/.cluster_bootstrap_secrets"
+  - creates: /var/lib/maas/.cluster_bootstrap_secrets
+  - watch_in:
+    - service: maas_region_services
+
+maas_cluster_dns_conflicts:
+  cmd.run:
+  - name: "maas-region edit_named_options --migrate-conflicting-options && touch /var/lib/maas/.cluster_bootstrap_dns"
+  - creates: /var/lib/maas/.cluster_bootstrap_dns
+  - watch_in:
+    - service: maas_region_services
+
+{%- endif %}
 
 {%- endif %}

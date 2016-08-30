@@ -41,12 +41,7 @@ Single MAAS cluster service [multiple racks]
     maas:
       cluster:
         enabled: true
-        version: '2'
-        region: 
-          host: localhost
-          port: 5240
-
-
+        role: master/slave
 
 Read more
 =========
