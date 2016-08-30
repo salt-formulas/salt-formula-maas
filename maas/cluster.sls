@@ -11,6 +11,8 @@ maas_cluster_remove_secrets:
     - service: maas_region_services
   - require:
     - pkg: maas_region_packages
+  - require_in:
+    - pkg: maas_cluster_packages
 
 maas_cluster_dns_conflicts:
   cmd.run:
@@ -20,7 +22,22 @@ maas_cluster_dns_conflicts:
     - service: maas_region_services
   - require:
     - pkg: maas_region_packages
+  - require_in:
+    - pkg: maas_cluster_packages
 
 {%- endif %}
+
+maas_cluster_packages:
+  pkg.installed:
+    - names: {{ cluster.pkgs }}
+
+/etc/maas/rackd.conf:
+  file.line:
+  - content: 'maas_url: {{ cluster.region.host }}/MAAS'
+  - match: 'maas_url*'
+  - mode: replace
+  - location: end
+  - require:
+    - pkg: maas_cluster_packages
 
 {%- endif %}

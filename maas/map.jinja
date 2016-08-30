@@ -1,7 +1,8 @@
 
 {%- load_yaml as cluster_defaults %}
 Debian:
-  pkgs: {}
+  pkgs:
+  - maas-rack-controller
 {%- endload %}
 
 {%- set cluster = salt['grains.filter_by'](cluster_defaults, merge=salt['pillar.get']('maas:cluster', {})) %}
