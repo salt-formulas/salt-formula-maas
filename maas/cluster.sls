@@ -9,6 +9,8 @@ maas_cluster_remove_secrets:
   - creates: /var/lib/maas/.cluster_bootstrap_secrets
   - watch_in:
     - service: maas_region_services
+  - require:
+    - pkg: maas_region_packages
 
 maas_cluster_dns_conflicts:
   cmd.run:
@@ -16,6 +18,8 @@ maas_cluster_dns_conflicts:
   - creates: /var/lib/maas/.cluster_bootstrap_dns
   - watch_in:
     - service: maas_region_services
+  - require:
+    - pkg: maas_region_packages
 
 {%- endif %}
 
