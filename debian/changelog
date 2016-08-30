@@ -1,4 +1,4 @@
-salt-formula-maas (0.1) trusty; urgency=medium
+salt-formula-maas (0.0.1) trusty; urgency=medium
 
   * Initial release
 
