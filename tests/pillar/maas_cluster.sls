@@ -1,10 +1,9 @@
 maas:
   cluster:
     enabled: true
-    role: slave
     region:
-      port: 80
       host: localhost
+    role: slave
   region:
     bind:
       host: localhost
