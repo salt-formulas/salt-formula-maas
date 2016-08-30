@@ -8,6 +8,10 @@ maas:
     bind:
       host: localhost
       port: 80
+    admin:
+      username: admin
+      password: password
+      email:  email@example.com
     database:
       engine: postgresql
       host: localhost
