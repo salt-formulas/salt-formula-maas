@@ -25,9 +25,9 @@ maas_region_packages:
   - require_in:
     - service: maas_region_services
 
-apache_headers_module:
-  apache_module.enabled:
-    - name: header
+maas_apache_headers:
+  cmd.run:
+  - name: "a2enmod headers"
   - require:
     - pkg: maas_region_packages
   - require_in:
@@ -40,9 +40,6 @@ apache_headers_module:
 /usr/share/maas/web/static/css/maas-styles.css:
   file.managed:
   - source: salt://maas/files/{{ region.theme }}-styles.css
-  - contents_pillar: maas:deployer:theme
-  - user: apache2
-  - group: apache2
   - mode: 644
   - watch_in:
     - service: maas_region_services
@@ -50,9 +47,6 @@ apache_headers_module:
 /usr/share/maas/web/static/img/logos/maas_logo.png:
   file.managed:
   - source: salt://maas/files/{{ region.theme }}_logo.png
-  - contents_pillar: maas:deployer:theme
-  - user: apache2
-  - group: apache2
   - mode: 644
 
 {%- endif %}
