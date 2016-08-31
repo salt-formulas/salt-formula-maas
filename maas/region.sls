@@ -23,7 +23,7 @@ maas_region_packages:
   - require:
     - pkg: maas_region_packages
   - require_in:
-    - service: maas_region_apache
+    - service: maas_region_services
 
 apache_headers_module:
   apache_module.enabled:
@@ -31,14 +31,29 @@ apache_headers_module:
   - require:
     - pkg: maas_region_packages
   - require_in:
-    - service: maas_region_apache
+    - service: maas_region_services
 
-maas_region_apache:
-  service.running:
-  - enable: true
-  - names: apache2
-  - watch:
-    - file: /etc/apache2/conf-enabled/maas-http.conf
+{%- endif %}
+
+{% if region.theme is defined %}
+
+/usr/share/maas/web/static/css/maas-styles.css:
+  file.managed:
+  - source: salt://maas/files/{{ region.theme }}-styles.css
+  - contents_pillar: maas:deployer:theme
+  - user: apache2
+  - group: apache2
+  - mode: 644
+  - watch_in:
+    - service: maas_region_services
+
+/usr/share/maas/web/static/img/logos/maas_logo.png:
+  file.managed:
+  - source: salt://maas/files/{{ region.theme }}_logo.png
+  - contents_pillar: maas:deployer:theme
+  - user: apache2
+  - group: apache2
+  - mode: 644
 
 {%- endif %}
 

@@ -22,7 +22,7 @@ Single MAAS region service [single UI/API]
 
     maas:
       region:
-        enabled: true
+        theme: theme
         bind:
           host: localhost
           port: 80
@@ -36,6 +36,8 @@ Single MAAS region service [single UI/API]
           name: maasdb
           password: password
           username: maas
+        enabled: true
+
 
 
 Single MAAS cluster service [multiple racks]

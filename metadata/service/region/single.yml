@@ -5,7 +5,6 @@ classes:
 parameters:
   maas:
     region:
-      enabled: true
       bind:
         host: localhost
         port: 80
@@ -19,3 +18,4 @@ parameters:
         name: maasdb
         password: password
         username: maas
+      enabled: true

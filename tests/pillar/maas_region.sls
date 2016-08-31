@@ -6,6 +6,7 @@ maas:
     role: master
     enable_iframe: True
   region:
+    theme: theme
     bind:
       host: localhost
       port: 80
