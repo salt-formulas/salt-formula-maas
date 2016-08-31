@@ -4,6 +4,7 @@ maas:
     region:
       host: localhost
     role: master
+    enable_iframe: True
   region:
     bind:
       host: localhost

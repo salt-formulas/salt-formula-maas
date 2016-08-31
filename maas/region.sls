@@ -12,6 +12,36 @@ maas_region_packages:
   - require:
     - pkg: maas_region_packages
 
+{%- if region.get('enable_iframe', False)  %}
+
+/etc/apache2/conf-enabled/maas-http.conf:
+  file.managed:
+  - source: salt://maas/files/maas-http.conf
+  - user: root
+  - group: root
+  - mode: 644
+  - require:
+    - pkg: maas_region_packages
+  - require_in:
+    - service: maas_region_apache
+
+apache_headers_module:
+  apache_module.enabled:
+    - name: header
+  - require:
+    - pkg: maas_region_packages
+  - require_in:
+    - service: maas_region_apache
+
+maas_region_apache:
+  service.running:
+  - enable: true
+  - names: apache2
+  - watch:
+    - file: /etc/apache2/conf-enabled/maas-http.conf
+
+{%- endif %}
+
 /etc/maas/preseeds/curtin_userdata_amd64_generic_trusty:
   file.managed:
   - source: salt://maas/files/curtin_userdata_amd64_generic_trusty
