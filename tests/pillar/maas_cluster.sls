@@ -5,6 +5,7 @@ maas:
       host: localhost
     role: slave
   region:
+    theme: theme
     bind:
       host: localhost
       port: 80
