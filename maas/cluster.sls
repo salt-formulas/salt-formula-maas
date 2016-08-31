@@ -25,6 +25,13 @@ maas_cluster_dns_conflicts:
   - require_in:
     - pkg: maas_cluster_packages
 
+maas_setup_admin:
+  cmd.run:
+  - name: "touch /var/lib/maas/.setup_admin"
+  - creates: /var/lib/maas/.setup_admin
+  - require:
+    - pkg: maas_region_packages
+
 {%- endif %}
 
 maas_cluster_packages:

@@ -38,6 +38,11 @@ maas_region_syncdb:
   - require:
     - file: /etc/maas/regiond.conf
 
+maas_set_admin_passord:
+  cmd.run:
+  - name: "maas createadmin --username {{ region.admin.username }} --password {{ region.admin.password }} --email {{ region.admin.email }} && touch /var/lib/maas/.setup_admin"
+  - creates: /var/lib/maas/.setup_admin
+  - require:
+    - service: maas_region_services
+
 {%- endif %}
-
-
