@@ -44,11 +44,6 @@ maas_apache_headers:
   - watch_in:
     - service: maas_region_services
 
-/usr/share/maas/web/static/img/logos/maas_logo.png:
-  file.managed:
-  - source: salt://maas/files/{{ region.theme }}_logo.png
-  - mode: 644
-
 {%- endif %}
 
 /etc/maas/preseeds/curtin_userdata_amd64_generic_trusty:
