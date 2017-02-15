@@ -56,6 +56,8 @@ def make_string_payload(name, content):
 
 
 def make_file_payload(name, content):
+    print('********************************')
+    print('content %s' % content)
     payload = MIMEApplication(content.read())
     payload.add_header(
         "Content-Disposition", "form-data", name=name, filename=name)
