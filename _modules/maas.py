@@ -47,7 +47,7 @@ def _auth(**connection_args):
 
     Only intended to be used within maas-enabled modules
     '''
-   
+
     prefix = "maas."
 
     # look in connection_args first, then default to config file
@@ -81,10 +81,10 @@ def cluster_get(cluster_name=None, **connection_args):
 
     response = maas.get(u"nodegroups/", "list").read()
     LOG.debug("Response: " + response)
-    
+
     object_list = json.loads(response)
 
-    
+
     for cluster in object_list:
         if cluster.get('cluster_name') == cluster_name:
             return {cluster.get('cluster_name'): cluster}
@@ -105,10 +105,10 @@ def cluster_list(**connection_args):
     ret = {}
 
     response = maas.get(u"nodegroups/", "list").read()
-    
+
     LOG.debug("Clusters in maas: " + response )
-    
-    object_list = json.loads(response)    
+
+    object_list = json.loads(response)
 
     for cluster in object_list:
         ret[cluster.get('cluster_name')] = cluster
@@ -136,7 +136,7 @@ def cluster_create(cluster_name=None, **connection_args):
     for cluster in maas.getprojectclusters(project.get('id')):
         if cluster.get('url') == cluster_url:
             create = False
-    if create:  
+    if create:
         maas.addprojectcluster(project['id'], cluster_url)
     return cluster_get(cluster_url, project_id=project['id'])
 
@@ -171,7 +171,7 @@ def cluster_update(cluster_id=None, old_cluster_name=None, new_cluster_name=None
         salt '*' maas.cluster_update cluster_id cluster_name dns_name status 
     '''
     maas = _auth(**connection_args)
-    
+
     cluster = {}
 
     if not cluster_id and old_cluster_name:
@@ -183,21 +183,21 @@ def cluster_update(cluster_id=None, old_cluster_name=None, new_cluster_name=None
 
     else:
         return {'Error': 'No cluster id or name specified'}
-	        
+
     if new_cluster_name:
-        cluster["cluster_name"] = new_cluster_name  
+        cluster["cluster_name"] = new_cluster_name
 
     if domain:
         cluster["name"] = domain
-    
+
     if status:
 	cluster["status"] = status
-    
+
     LOG.debug("Cluster id: " + cluster_id)
     LOG.debug("New cluster info: " + str(cluster))
-   
+
     response = maas.put(u"nodegroups/" + cluster_id + "/", **cluster)
-    
+
     #TODO check response status
     return {'Status': True}
 
