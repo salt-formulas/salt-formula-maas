@@ -106,7 +106,6 @@ class MaasObject(object):
                 data = self.fill_data(name, config_data, **extra)
                 if name in all_elements:
                     self._update = True
-                    LOG.error('%s DATA %s', all_elements[name], data)
                     data = self.update(data, all_elements[name])
                     self.send(data)
                     ret['updated'].append(name)
@@ -312,13 +311,12 @@ class Machine(MaasObject):
         self._update_key = 'system_id'
 
     def fill_data(self, name, machine_data):
-        main_interface = next(machine_data['interfaces'][0].iteritems())
-        interfaces = machine_data['interfaces'][1:]
+        self._interface = machine_data['interface']
         power_data = machine_data['power_parameters']
         data = {
             'hostname': name,
             'architecture': machine_data.get('architecture', 'amd64/generic'),
-            'mac_addresses': main_interface[1],
+            'mac_addresses': self._interface['mac'],
             'power_type': machine_data.get('power_type', 'ipmi'),
             'power_parameters_power_address': power_data['power_address'],
         }
@@ -338,6 +336,33 @@ class Machine(MaasObject):
         else:
             new[self._update_key] = str(old[self._update_key])
         return new
+
+    def _link_interface(self, system_id, interface_id):
+        if 'ip' not in self._interface:
+            return
+        data = {
+            'mode': 'STATIC',
+            'subnet': self._interface.get('subnet'),
+            'ip_address': self._interface.get('ip'),
+        }
+        if 'default_gateway' in self._interface:
+            data['default_gateway'] = self._interface.get('gateway')
+        if self._update:
+            data['force'] = '1'
+        LOG.info('interfaces link_subnet %s %s %s', system_id, interface_id,
+                _format_data(data))
+        self._maas.post(u'/api/2.0/nodes/{0}/interfaces/{1}/'
+                        .format(system_id, interface_id), 'link_subnet',
+                        **data)
+
+    def send(self, data):
+        response = super(Device, self).send(data)
+        resp_json = json.loads(response)
+        system_id = resp_json['system_id']
+        iface_id = resp_json['interface_set'][0]['id']
+        self._link_interface(maas, system_id, iface_id)
+        return response
+
 
 class BootResource(MaasObject):
     def __init__(self):
