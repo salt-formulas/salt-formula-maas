@@ -55,7 +55,7 @@ def _format_data(data):
 def _create_maas_client():
     global APIKEY_FILE
     try:
-        api_token = file(APIKEY_FILE).read().strip().split(':')
+        api_token = file(APIKEY_FILE).read().splitlines()[-1].strip().split(':')
     except:
         LOG.exception('token')
     auth = MAASOAuth(*api_token)
@@ -76,6 +76,8 @@ class MaasObject(object):
         LOG.info('%s %s', self.__class__.__name__.lower(), _format_data(data))
         if self._update:
             return self._maas.put(self._update_url.format(data[self._update_key]), **data).read()
+        if isinstance(self._create_url, tuple):
+            return self._maas.post(*self._create_url, **data).read()
         return self._maas.post(self._create_url, None, **data).read()
 
     def process(self):
@@ -89,8 +91,11 @@ class MaasObject(object):
                 url_call, key = url_call[:]
             extra[name] = {v['name']: v[key] for v in
                             json.loads(self._maas.get(url_call).read())}
-        elements = self._maas.get(self._all_elements_url).read()
-        all_elements = {v[self._element_key]: v for v in json.loads(elements)}
+        if self._all_elements_url:
+            elements = self._maas.get(self._all_elements_url).read()
+            all_elements = {v[self._element_key]: v for v in json.loads(elements)}
+        else:
+            all_elements = {}
         ret = {
             'success': [],
             'errors': {},
@@ -127,7 +132,6 @@ class Fabric(MaasObject):
         self._create_url = u'api/2.0/fabrics/'
         self._update_url = u'api/2.0/fabrics/{0}/'
         self._config_path = 'region.fabrics'
-#        self._update_keys = ['name', 'description', 'class_type', 'id']
 
     def fill_data(self, name, fabric):
         data = {
@@ -361,6 +365,44 @@ class BootResource(MaasObject):
         self._update = False
         return new
 
+class CommissioningScripts(MaasObject):
+    def __init__(self):
+        super(CommissioningScripts, self).__init__()
+        self._all_elements_url = u'api/2.0/commissioning-scripts/'
+        self._create_url = u'api/2.0/commissioning-scripts/'
+        self._update_url = u'api/2.0/commissioning-scripts/{0}/'
+        self._config_path = 'region.commissioning_scripts'
+        self._update_key = 'name'
+
+    def fill_data(self, name, file_path):
+        data = {
+            'name': name,
+            'content': io.open(file_path),
+        }
+        return data
+
+    def update(self, new, old):
+        return new
+
+class MaasConfig(MaasObject):
+    def __init__(self):
+        super(MaasConfig, self).__init__()
+        self._all_elements_url = None
+        self._create_url = (u'api/2.0/maas/', u'set_config')
+        self._config_path = 'region.maas_config'
+
+    def fill_data(self, name, value):
+        data = {
+            'name': name,
+            'value': value,
+        }
+        return data
+
+    def update(self, new, old):
+        self._update = False
+        return new
+
+
 def process_fabrics():
     return Fabric().process()
 
@@ -381,3 +423,9 @@ def process_machines():
 
 def process_boot_resources():
     return BootResource().process()
+
+def process_maas_config():
+    return MaasConfig().process()
+
+def process_commissioning_scripts():
+    return CommissioningScripts().process()

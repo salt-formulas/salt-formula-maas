@@ -83,50 +83,66 @@ maas_login_admin:
   cmd.run:
   - name: "maas-region apikey --username {{ region.admin.username }} > /var/lib/maas/.maas_credentials"
 
+maas_config:
+  module.run:
+  - name: maas.process_maas_config
+  - require:
+    - cmd: maas_login_admin
+
+maas_commissioning_scripts:
+  module.run:
+  - name: maas.process_commissioning_scripts
+  - require:
+    - module: maas_config
+
 maas_fabrics:
   module.run:
   - name: maas.process_fabrics
   - require:
-    - cmd: maas_login_admin
+    - module: maas_config
 
 maas_subnets:
   module.run:
   - name: maas.process_subnets
   - require:
-    - cmd: maas_login_admin
+    - module: maas_config
     - module: maas_fabrics
+    - module: maas_config
 
 maas_devices:
   module.run:
   - name: maas.process_devices
   - require:
-    - cmd: maas_login_admin
+    - module: maas_config
     - module: maas_subnets
+    - module: maas_config
 
 maas_machines:
   module.run:
   - name: maas.process_machines
   - require:
-    - cmd: maas_login_admin
+    - module: maas_config
     - module: maas_subnets
+    - module: maas_config
+    - module: maas_commissioning_scripts
 
 maas_dhcp_snippets:
   module.run:
   - name: maas.process_dhcp_snippets
   - require:
-    - cmd: maas_login_admin
+    - module: maas_config
 
 maas_package_repositories:
   module.run:
   - name: maas.process_package_repositories
   - require:
-    - cmd: maas_login_admin
+    - module: maas_config
+    - module: maas_config
 
 maas_boot_resources:
   module.run:
   - name: maas.process_boot_resources
   - require:
-    - cmd: maas_login_admin
+    - module: maas_config
 
 {%- endif %}
-
