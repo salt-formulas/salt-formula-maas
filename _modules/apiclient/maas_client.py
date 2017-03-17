@@ -242,4 +242,4 @@ class MAASClient:
         """Dispatch a DELETE on the resource at `path`."""
         url, headers, body = self._formulate_change(path, {})
         return self.dispatcher.dispatch_query(
-            url, method="DELETE", headers=headers)
+            url, method="DELETE", headers=headers, data=body)

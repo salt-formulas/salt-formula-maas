@@ -92,8 +92,14 @@ class MaasObject(object):
             extra[name] = {v['name']: v[key] for v in
                             json.loads(self._maas.get(url_call).read())}
         if self._all_elements_url:
+            all_elements = {}
             elements = self._maas.get(self._all_elements_url).read()
-            all_elements = {v[self._element_key]: v for v in json.loads(elements)}
+            res_json = json.loads(elements)
+            for element in res_json:
+                if isinstance(element, (str, unicode)):
+                    all_elements[element] = {}
+                else:
+                    all_elements[element[self._element_key]] = element
         else:
             all_elements = {}
         ret = {
@@ -106,7 +112,6 @@ class MaasObject(object):
                 data = self.fill_data(name, config_data, **extra)
                 if name in all_elements:
                     self._update = True
-                    LOG.error('%s DATA %s', all_elements[name], data)
                     data = self.update(data, all_elements[name])
                     self.send(data)
                     ret['updated'].append(name)
@@ -267,10 +272,10 @@ class Device(MaasObject):
         return data
 
     def update(self, new, old):
-        new_macs = set(new['mac_addresses'])
-        old_macs = set(v['mac_address'] for v in old[interface_set])
-        if new_macs - old_macs:
+        old_macs = set(v['mac_address'].lower() for v in old['interface_set'])
+        if new['mac_addresses'].lower() not in old_macs:
             self._update = False
+            LOG.info('Mac changed deleting old device %s', old['system_id'])
             self._maas.delete(u'api/2.0/devices/{0}/'.format(old['system_id']))
         else:
             new[self._update_key] = str(old[self._update_key])
@@ -281,14 +286,14 @@ class Device(MaasObject):
         resp_json = json.loads(response)
         system_id = resp_json['system_id']
         iface_id = resp_json['interface_set'][0]['id']
-        self._link_interface(maas, system_id, iface_id)
+        self._link_interface(system_id, iface_id)
         return response
 
     def _link_interface(self, system_id, interface_id):
         data = {
             'mode': self._interface.get('mode', 'STATIC'),
-            'subnet': self._interface.get('subnet'),
-            'ip_address': self._interface.get('ip_address'),
+            'subnet': self._interface['subnet'],
+            'ip_address': self._interface['ip_address'],
         }
         if 'default_gateway' in self._interface:
             data['default_gateway'] = self._interface.get('default_gateway')
@@ -312,13 +317,12 @@ class Machine(MaasObject):
         self._update_key = 'system_id'
 
     def fill_data(self, name, machine_data):
-        main_interface = next(machine_data['interfaces'][0].iteritems())
-        interfaces = machine_data['interfaces'][1:]
+        self._interface = machine_data['interface']
         power_data = machine_data['power_parameters']
         data = {
             'hostname': name,
             'architecture': machine_data.get('architecture', 'amd64/generic'),
-            'mac_addresses': main_interface[1],
+            'mac_addresses': self._interface['mac'],
             'power_type': machine_data.get('power_type', 'ipmi'),
             'power_parameters_power_address': power_data['power_address'],
         }
@@ -330,14 +334,41 @@ class Machine(MaasObject):
         return data
 
     def update(self, new, old):
-        new_macs = set(new['mac_addresses'])
-        old_macs = set(v['mac_address'] for v in old[interface_set])
-        if new_macs - old_macs:
+        old_macs = set(v['mac_address'].lower() for v in old['interface_set'])
+        if new['mac_addresses'].lower() not in old_macs:
             self._update = False
-            self._maas.delete(u'api/2.0/machiens/{0}/'.format(old['system_id']))
+            LOG.info('Mac changed deleting old machine %s', old['system_id'])
+            self._maas.delete(u'api/2.0/machines/{0}/'.format(old['system_id']))
         else:
             new[self._update_key] = str(old[self._update_key])
         return new
+
+    def _link_interface(self, system_id, interface_id):
+        if 'ip' not in self._interface:
+            return
+        data = {
+            'mode': 'STATIC',
+            'subnet': self._interface.get('subnet'),
+            'ip_address': self._interface.get('ip'),
+        }
+        if 'default_gateway' in self._interface:
+            data['default_gateway'] = self._interface.get('gateway')
+        if self._update:
+            data['force'] = '1'
+        LOG.info('interfaces link_subnet %s %s %s', system_id, interface_id,
+                _format_data(data))
+        self._maas.post(u'/api/2.0/nodes/{0}/interfaces/{1}/'
+                        .format(system_id, interface_id), 'link_subnet',
+                        **data)
+
+    def send(self, data):
+        response = super(Machine, self).send(data)
+        resp_json = json.loads(response)
+        system_id = resp_json['system_id']
+        iface_id = resp_json['interface_set'][0]['id']
+        self._link_interface(system_id, iface_id)
+        return response
+
 
 class BootResource(MaasObject):
     def __init__(self):
@@ -370,8 +401,8 @@ class CommissioningScripts(MaasObject):
         super(CommissioningScripts, self).__init__()
         self._all_elements_url = u'api/2.0/commissioning-scripts/'
         self._create_url = u'api/2.0/commissioning-scripts/'
-        self._update_url = u'api/2.0/commissioning-scripts/{0}/'
         self._config_path = 'region.commissioning_scripts'
+        self._update_url = u'api/2.0/commissioning-scripts/{0}'
         self._update_key = 'name'
 
     def fill_data(self, name, file_path):
@@ -394,7 +425,7 @@ class MaasConfig(MaasObject):
     def fill_data(self, name, value):
         data = {
             'name': name,
-            'value': value,
+            'value': str(value),
         }
         return data
 
