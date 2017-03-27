@@ -20,24 +20,104 @@ Single MAAS region service [single UI/API]
 
 .. code-block:: yaml
 
-    maas:
-      region:
-        theme: theme
-        bind:
-          host: localhost
-          port: 80
-        admin:
-          username: admin
-          password: password
-          email:  email@example.com
-        database:
-          engine: postgresql
-          host: localhost
-          name: maasdb
-          password: password
-          username: maas
-        enabled: true
+  maas:
+    region:
+      theme: mirantis
+      bind:
+        host: 192.168.0.10:5240
+        port: 5240
+      admin:
+        username: exampleuser
+        password: examplepassword
+        email:  email@example.com
+      database:
+        engine: null
+        host: localhost
+        name: maasdb
+        password: qwqwqw
+        username: maas
+      enabled: true
+      user: mirantis
+      token: "89EgtWkX45ddjMYpuL:SqVjxFG87Dr6kVf4Wp:5WLfbUgmm9XQtJxm3V2LUUy7bpCmqmnk"
+      fabrics:
+        test-fabric:
+          description: Test fabric
+      subnets:
+        subnet1:
+          fabric: test-fabric
+          cidr: 2.2.3.0/24
+          gateway_ip: 2.2.3.2
+          iprange:
+            start: 2.2.3.20
+            end: 2.2.3.250
+      dhcp_snippets:
+        test-snippet:
+          value: option bootfile-name "tftp://192.168.0.10/snippet";
+          description: Test snippet
+          enabled: true
+          subnet: subnet1
+      boot_resources:
+        bootscript1:
+          title: bootscript
+          architecture: amd64/generic
+          filetype: tgz
+          content: /srv/salt/reclass/nodes/path_to_file
+      package_repositories:
+        Saltstack:
+          url: http://repo.saltstack.com/apt/ubuntu/14.04/amd64/2016.3/
+          distributions:
+               - trusty
+          components:
+              - main
+              - extra
+          arches: amd64
+          key: "-----BEGIN PGP PUBLIC KEY BLOCK-----
+               Version: GnuPG v2
 
+               mQENBFOpvpgBCADkP656H41i8fpplEEB8IeLhugyC2rTEwwSclb8tQNYtUiGdna9
+               m38kb0OS2DDrEdtdQb2hWCnswxaAkUunb2qq18vd3dBvlnI+C4/xu5ksZZkRj+fW
+               tArNR18V+2jkwcG26m8AxIrT+m4M6/bgnSfHTBtT5adNfVcTHqiT1JtCbQcXmwVw
+               WbqS6v/LhcsBE//SHne4uBCK/GHxZHhQ5jz5h+3vWeV4gvxS3Xu6v1IlIpLDwUts
+               kT1DumfynYnnZmWTGc6SYyIFXTPJLtnoWDb9OBdWgZxXfHEcBsKGha+bXO+m2tHA
+               gNneN9i5f8oNxo5njrL8jkCckOpNpng18BKXABEBAAG0MlNhbHRTdGFjayBQYWNr
+               YWdpbmcgVGVhbSA8cGFja2FnaW5nQHNhbHRzdGFjay5jb20+iQE4BBMBAgAiBQJT
+               qb6YAhsDBgsJCAcDAgYVCAIJCgsEFgIDAQIeAQIXgAAKCRAOCKFJ3le/vhkqB/0Q
+               WzELZf4d87WApzolLG+zpsJKtt/ueXL1W1KA7JILhXB1uyvVORt8uA9FjmE083o1
+               yE66wCya7V8hjNn2lkLXboOUd1UTErlRg1GYbIt++VPscTxHxwpjDGxDB1/fiX2o
+               nK5SEpuj4IeIPJVE/uLNAwZyfX8DArLVJ5h8lknwiHlQLGlnOu9ulEAejwAKt9CU
+               4oYTszYM4xrbtjB/fR+mPnYh2fBoQO4d/NQiejIEyd9IEEMd/03AJQBuMux62tjA
+               /NwvQ9eqNgLw9NisFNHRWtP4jhAOsshv1WW+zPzu3ozoO+lLHixUIz7fqRk38q8Q
+               9oNR31KvrkSNrFbA3D89uQENBFOpvpgBCADJ79iH10AfAfpTBEQwa6vzUI3Eltqb
+               9aZ0xbZV8V/8pnuU7rqM7Z+nJgldibFk4gFG2bHCG1C5aEH/FmcOMvTKDhJSFQUx
+               uhgxttMArXm2c22OSy1hpsnVG68G32Nag/QFEJ++3hNnbyGZpHnPiYgej3FrerQJ
+               zv456wIsxRDMvJ1NZQB3twoCqwapC6FJE2hukSdWB5yCYpWlZJXBKzlYz/gwD/Fr
+               GL578WrLhKw3UvnJmlpqQaDKwmV2s7MsoZogC6wkHE92kGPG2GmoRD3ALjmCvN1E
+               PsIsQGnwpcXsRpYVCoW7e2nW4wUf7IkFZ94yOCmUq6WreWI4NggRcFC5ABEBAAGJ
+               AR8EGAECAAkFAlOpvpgCGwwACgkQDgihSd5Xv74/NggA08kEdBkiWWwJZUZEy7cK
+               WWcgjnRuOHd4rPeT+vQbOWGu6x4bxuVf9aTiYkf7ZjVF2lPn97EXOEGFWPZeZbH4
+               vdRFH9jMtP+rrLt6+3c9j0M8SIJYwBL1+CNpEC/BuHj/Ra/cmnG5ZNhYebm76h5f
+               T9iPW9fFww36FzFka4VPlvA4oB7ebBtquFg3sdQNU/MmTVV4jPFWXxh4oRDDR+8N
+               1bcPnbB11b5ary99F/mqr7RgQ+YFF0uKRE3SKa7a+6cIuHEZ7Za+zhPaQlzAOZlx
+               fuBmScum8uQTrEF5+Um5zkwC7EXTdH1co/+/V/fpOtxIg4XO4kcugZefVm5ERfVS
+               MA==
+               =dtMN
+               -----END PGP PUBLIC KEY BLOCK-----"
+          enabled: true
+      machines:
+        machine1:
+          interfaces:
+            - one1: "11:22:33:44:55:66"
+          power_parameters:
+            power_type: ipmi
+            power_address: '192.168.10.10'
+            power_user: bmc_user
+            power_password: bmc_password
+      devices:
+        machine1-ipmi:
+          interface:
+            ip_address: 192.168.10.10
+            subnet: cidr:192.168.10.0/24
+          mac: '66:55:44:33:22:11'
 
 
 Single MAAS cluster service [multiple racks]
