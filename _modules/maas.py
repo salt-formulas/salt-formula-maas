@@ -434,6 +434,128 @@ class MaasConfig(MaasObject):
         return new
 
 
+#class SSHPrefs(MaasObject):
+#    def __init__(self):
+#        super(SSHPrefs, self).__init__()
+#        self._all_elements_url = u'api/2.0/machines/'
+#        self._create_url = u'api/2.0/account/prefs/sshkeys/'
+#        self._config_path = 'region.sshprefs'
+#        self._element_key = 'hostname'
+#        self._update_key = 'system_id'
+#
+#    def fill_data(self, value):
+#        data = {
+#            'key': value,
+#        }
+#        return data
+#
+#    def process(self):
+#        config = __salt__['config.get']('maas')
+#        for part in self._config_path.split('.'):
+#            config = config.get(part, {})
+#        extra = {}
+#        for name, url_call in self._extra_data_urls.iteritems():
+#            key = 'id'
+#            if isinstance(url_call, tuple):
+#                url_call, key = url_call[:]
+#            extra[name] = {v['name']: v[key] for v in
+#                            json.loads(self._maas.get(url_call).read())}
+#        if self._all_elements_url:
+#            all_elements = {}
+#            elements = self._maas.get(self._all_elements_url).read()
+#            res_json = json.loads(elements)
+#            for element in res_json:
+#                if isinstance(element, (str, unicode)):
+#                    all_elements[element] = {}
+#                else:
+#                    all_elements[element[self._element_key]] = element
+#        else:
+#            all_elements = {}
+#        ret = {
+#            'success': [],
+#            'errors': {},
+#            'updated': [],
+#        }
+#        for config_data in config:
+#            try:
+#                data = self.fill_data(config_data, **extra)
+#                self.send(data)
+#                ret['success'].append(name)
+#            except urllib2.HTTPError as e:
+#                etxt = e.read()
+#                LOG.exception('Failed for object %s reason %s', name, etxt)
+#                ret['errors'][name] = str(etxt)
+#            except Exception as e:
+#                LOG.exception('Failed for object %s reason %s', name, e)
+#                ret['errors'][name] = str(e)
+#        if ret['errors']:
+#            raise Exception(ret)
+#        return ret
+
+class Domain(MaasObject):
+    def __init__(self):
+        super(Domain, self).__init__()
+        self._all_elements_url = u'/api/2.0/domains/'
+        self._create_url = u'/api/2.0/domains/'
+        self._config_path = 'region.domain'
+        self._update_url = u'/api/2.0/domains/{0}/'
+
+    def fill_data(self, value):
+        data = {
+            'name': value,
+        }
+        self._update = True
+        return data
+
+    def update(self, new, old):
+        new['id'] = str(old['id'])
+        new['authoritative'] = str(old['authoritative'])
+        return new
+
+    def process(self):
+        config = __salt__['config.get']('maas')
+        for part in self._config_path.split('.'):
+            config = config.get(part, {})
+        extra = {}
+        for name, url_call in self._extra_data_urls.iteritems():
+            key = 'id'
+            if isinstance(url_call, tuple):
+                url_call, key = url_call[:]
+            extra[name] = {v['name']: v[key] for v in
+                            json.loads(self._maas.get(url_call).read())}
+        if self._all_elements_url:
+            all_elements = {}
+            elements = self._maas.get(self._all_elements_url).read()
+            res_json = json.loads(elements)
+            for element in res_json:
+                if isinstance(element, (str, unicode)):
+                    all_elements[element] = {}
+                else:
+                    all_elements[element[self._element_key]] = element
+        else:
+            all_elements = {}
+        ret = {
+            'success': [],
+            'errors': {},
+            'updated': [],
+        }
+        try:
+            data = self.fill_data(config, **extra)
+            data = self.update(data, all_elements.values()[0])
+            self.send(data)
+            ret['success'].append('domain')
+        except urllib2.HTTPError as e:
+            etxt = e.read()
+            LOG.exception('Failed for object %s reason %s', 'domain', etxt)
+            ret['errors']['domain'] = str(etxt)
+        except Exception as e:
+            LOG.exception('Failed for object %s reason %s', 'domain', e)
+            ret['errors']['domain'] = str(e)
+        if ret['errors']:
+            raise Exception(ret)
+        return ret
+
+
 def process_fabrics():
     return Fabric().process()
 
@@ -460,3 +582,6 @@ def process_maas_config():
 
 def process_commissioning_scripts():
     return CommissioningScripts().process()
+
+def process_domain():
+    return Domain().process()
