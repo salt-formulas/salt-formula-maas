@@ -16,7 +16,16 @@ early_commands:
   driver_04_load: ["sh", "-c", "depmod && modprobe {{driver['module']}}"]
 {{endif}}
 late_commands:
-  maas: [wget, '--no-proxy', '{{node_disable_pxe_url|escape.shell}}', '--post-data', '{{node_disable_pxe_data|escape.shell}}', '-O', '/dev/null']
+  maas: [wget, '--no-proxy', {{node_disable_pxe_url|escape.json}}, '--post-data', {{node_disable_pxe_data|escape.json}}, '-O', '/dev/null']
+  apt_00_set_repo: ["curtin", "in-target", "--", "sh", "-c", "echo 'deb [arch=amd64] http://repo.saltstack.com/apt/ubuntu/14.04/amd64/2016.3/ trusty main' >> /etc/apt/sources.list"]
+  apt_01_set_gpg: ["curtin", "in-target", "--", "sh", "-c", "echo 'LS0tLS1CRUdJTiBQR1AgUFVCTElDIEtFWSBCTE9DSy0tLS0tClZlcnNpb246IEdudVBHIHYyCgptUUVOQkZPcHZwZ0JDQURrUDY1Nkg0MWk4ZnBwbEVFQjhJZUxodWd5QzJyVEV3d1NjbGI4dFFOWXRVaUdkbmE5Cm0zOGtiME9TMkREckVkdGRRYjJoV0Nuc3d4YUFrVXVuYjJxcTE4dmQzZEJ2bG5JK0M0L3h1NWtzWlprUmorZlcKdEFyTlIxOFYrMmprd2NHMjZtOEF4SXJUK200TTYvYmduU2ZIVEJ0VDVhZE5mVmNUSHFpVDFKdENiUWNYbXdWdwpXYnFTNnYvTGhjc0JFLy9TSG5lNHVCQ0svR0h4WkhoUTVqejVoKzN2V2VWNGd2eFMzWHU2djFJbElwTER3VXRzCmtUMUR1bWZ5bllublptV1RHYzZTWXlJRlhUUEpMdG5vV0RiOU9CZFdnWnhYZkhFY0JzS0doYStiWE8rbTJ0SEEKZ05uZU45aTVmOG9OeG81bmpyTDhqa0Nja09wTnBuZzE4QktYQUJFQkFBRzBNbE5oYkhSVGRHRmpheUJRWVdOcgpZV2RwYm1jZ1ZHVmhiU0E4Y0dGamEyRm5hVzVuUUhOaGJIUnpkR0ZqYXk1amIyMCtpUUU0QkJNQkFnQWlCUUpUCnFiNllBaHNEQmdzSkNBY0RBZ1lWQ0FJSkNnc0VGZ0lEQVFJZUFRSVhnQUFLQ1JBT0NLRkozbGUvdmhrcUIvMFEKV3pFTFpmNGQ4N1dBcHpvbExHK3pwc0pLdHQvdWVYTDFXMUtBN0pJTGhYQjF1eXZWT1J0OHVBOUZqbUUwODNvMQp5RTY2d0N5YTdWOGhqTm4ybGtMWGJvT1VkMVVURXJsUmcxR1liSXQrK1ZQc2NUeEh4d3BqREd4REIxL2ZpWDJvCm5LNVNFcHVqNEllSVBKVkUvdUxOQXdaeWZYOERBckxWSjVoOGxrbndpSGxRTEdsbk91OXVsRUFlandBS3Q5Q1UKNG9ZVHN6WU00eHJidGpCL2ZSK21QblloMmZCb1FPNGQvTlFpZWpJRXlkOUlFRU1kLzAzQUpRQnVNdXg2MnRqQQovTnd2UTllcU5nTHc5TmlzRk5IUld0UDRqaEFPc3NodjFXVyt6UHp1M296b08rbExIaXhVSXo3ZnFSazM4cThRCjlvTlIzMUt2cmtTTnJGYkEzRDg5dVFFTkJGT3B2cGdCQ0FESjc5aUgxMEFmQWZwVEJFUXdhNnZ6VUkzRWx0cWIKOWFaMHhiWlY4Vi84cG51VTdycU03WituSmdsZGliRms0Z0ZHMmJIQ0cxQzVhRUgvRm1jT012VEtEaEpTRlFVeAp1aGd4dHRNQXJYbTJjMjJPU3kxaHBzblZHNjhHMzJOYWcvUUZFSisrM2hObmJ5R1pwSG5QaVlnZWozRnJlclFKCnp2NDU2d0lzeFJETXZKMU5aUUIzdHdvQ3F3YXBDNkZKRTJodWtTZFdCNXlDWXBXbFpKWEJLemxZei9nd0QvRnIKR0w1NzhXckxoS3czVXZuSm1scHFRYURLd21WMnM3TXNvWm9nQzZ3a0hFOTJrR1BHMkdtb1JEM0FMam1Ddk4xRQpQc0lzUUdud3BjWHNScFlWQ29XN2Uyblc0d1VmN0lrRlo5NHlPQ21VcTZXcmVXSTROZ2dSY0ZDNUFCRUJBQUdKCkFSOEVHQUVDQUFrRkFsT3B2cGdDR3d3QUNna1FEZ2loU2Q1WHY3NC9OZ2dBMDhrRWRCa2lXV3dKWlVaRXk3Y0sKV1djZ2puUnVPSGQ0clBlVCt2UWJPV0d1Nng0Ynh1VmY5YVRpWWtmN1pqVkYybFBuOTdFWE9FR0ZXUFplWmJINAp2ZFJGSDlqTXRQK3JyTHQ2KzNjOWowTThTSUpZd0JMMStDTnBFQy9CdUhqL1JhL2Ntbkc1Wk5oWWVibTc2aDVmClQ5aVBXOWZGd3czNkZ6RmthNFZQbHZBNG9CN2ViQnRxdUZnM3NkUU5VL01tVFZWNGpQRldYeGg0b1JERFIrOE4KMWJjUG5iQjExYjVhcnk5OUYvbXFyN1JnUStZRkYwdUtSRTNTS2E3YSs2Y0l1SEVaN1phK3poUGFRbHpBT1pseApmdUJtU2N1bTh1UVRyRUY1K1VtNXprd0M3RVhUZEgxY28vKy9WL2ZwT3R4SWc0WE80a2N1Z1plZlZtNUVSZlZTCk1BPT0KPWR0TU4KLS0tLS1FTkQgUEdQIFBVQkxJQyBLRVkgQkxPQ0stLS0tLQo='|base64 -d|apt-key add -"]
+  apt_03_update: ["curtin", "in-target", "--", "apt-get", "update"]
+  salt_01_install: ["curtin", "in-target", "--", "apt-get", "-y", "install", "salt-minion"]
+{% endraw %}
+  salt_02_hostname_set: ["curtin", "in-target", "--", "echo", "{% raw %}{{node.hostname}}{% endraw %}.{{pillar.linux.system.domain}}"]
+  salt_03_hostname_get: ["curtin", "in-target", "--", "sh", "-c", "echo 'id: {% raw %}{{node.hostname}}{% endraw %}.{{pillar.linux.system.domain}}' >> /etc/salt/minion"]
+  salt_04_master: ["curtin", "in-target", "--", "sh", "-c", "echo 'master: {{grains['ip4_interfaces']['enp0s3'][0]}}' >> /etc/salt/minion"]
+{% raw %}
 {{if third_party_drivers and driver}}
   driver_00_key_get: curtin in-target -- sh -c "/bin/echo -en '{{key_string}}' > /tmp/maas-{{driver['package']}}.gpg"
   driver_02_key_add: ["curtin", "in-target", "--", "apt-key", "add", "/tmp/maas-{{driver['package']}}.gpg"]
@@ -26,45 +35,4 @@ late_commands:
   driver_06_depmod: ["curtin", "in-target", "--", "depmod"]
   driver_07_update_initramfs: ["curtin", "in-target", "--", "update-initramfs", "-u"]
 {{endif}}
-  apt_00_tcpcloud_set: ["curtin", "in-target", "--", "sh", "-c", "echo 'deb [arch=amd64] http://apt.tcpcloud.eu/nightly/ trusty main security extra tcp tcp-salt' > /etc/apt/sources.list"]
-  apt_01_tcpcloud_gpg: ["curtin", "in-target", "--", "sh", "-c", "echo 'LS0tLS1CRUdJTiBQR1AgUFVCTElDIEtFWSBCTE9DSy0tLS0tDQpWZXJzaW9uOiBHbnVQRyB2MQ0KDQptUUlOQkZXQmZDSUJFQURmNmxuc1k5djRyZi94MHJpYmtGbG5IbnN2MS95RCtNK1lnWm9ReFlkZjZiN000L1BZDQp6Wi9jM3VKdDRsMXZSM1lvb2NmYzFWZ3RCTmZBMXVzc0JxWGRteVJCTU8xTEtkUVdudXJOeFdMVzdDd2N5TmtlDQp4ZUJmaGpPcUE2dElJWE1mb3I3dVVyd2xJeEpJeEsramMzQzNuaE00NlFacFdYNWQ0bWxrZ3hLaDFHNFpSajRBDQptRW8yTmR1TFVnZm1GK2dNMU1tQWJVOGVremNpS2V0NFRzTTY0V0F0SHlZbGxHS3Z1RlNkQmpzZXdPM01jdWhSDQppMURlc2I1UWRmSVU0cDNna0lhMEVxbGtrcVg0cm93bzVxVW5sNjcwVE5UVFpIYXowTXhDQm9ZYUdiR2hTN2daDQo2L1BMbThmSkhtVS9waHN0L1FtT1k3NmE1ZWZaV2JoaG5seVlMSUI4VWp5d04rVkRxd2tOazlqTFVTWEhUYWtoDQpkbkw0T3VHb05wSXptczhqdVZGbG51T214K0ZjZmJITWJoQWM3YVBxRksrNkozWVM0a0pTZmVIV0o2Y1RHb1UxDQpjTFdFaHNiVTNHcDhhbTVmbmg3MlJKN3Yyc1RlL3J2Q3VWdGxOdWZpNVN5QlBjRVVab3hGVldBQy9oTWVpV3p5DQpkckJJVkM3M3JhZitBK09qSDhvcDlYZmtWajZjenhRLzQ1MXNvZTNqdkNER2dUWFBMbHRzK1A1V2hnV05wRFBhDQpmT2ZUSG4vMm83TndvTTdWcCtCUVlLQVE3OHBoc29sdk5OaGYrZzUxbnRvTFVieEFHS1pZelE1UlBzS28rSHE2DQo5NlVDRmtxaFNBQmswRHZNMEx0cXV6WitzTm9pcGQwMnc4RWF4UXplbERKeHZQRkdpZ28xdXFHb2lRQVJBUUFCDQp0Q3gwWTNCamJHOTFaQ0J6YVdkdWFXNW5JR3RsZVNBOFlYVjBiMkoxYVd4a1FIUmpjR05zYjNWa0xtVjFQb2tDDQpPd1FUQVFJQUpRSWJBd1lMQ1FnSEF3SUdGUWdDQ1FvTEJCWUNBd0VDSGdFQ0Y0QUZBbFdqNEs4Q0dRRUFDZ2tRDQpKQUNGQ2Fkb2d0UG05eEFBbDFEMVJVWTFtdHRqS2srOEtJM3RVbWd0cUxhSUdVY0I0VFBiSWhRcEZ5MjNUSmQ2DQpCbm5FYUdaK0hTQ2ozbHAvZEJvcTF4eENxSEN6aUtBMDRJcFBhTHBHSmY4Y3FhS09wUXBXMUVybFN4VDZuQ1FXDQpGckhGeFpyZUJUbGpLcVczZnZSQlhOQXF1ajBrckpFd3YxOS8zU3NRK0NKSTJaa3EvSFBEdzllSk9DdTBXY0pNDQpQVnRBcTJTbWFEaWdoMWp0RmNGb1daN3VGRk1RUElXaXQvUkNQa0Rma0ZhZjZsYllaL25udldPTjlPQWd6V2NpDQpHSmpDcDVhN3ZNeUNwVFJ5NmJnTlBxTTYxb21DZTBpUTR5SWNxQU5YaFJZUy9EQm5qS3I5WWFES25sS05VZ2QxDQpXUkU4UXpFclF6bkgvcGxnSVNRK2RmKzhJdW5wM1NCci9qajE2MDR5eU0xV3hwcG4xK2RBb1RCVTFPUEZHVmQzDQptQ0VZSFVlK3YwaVRaNjlDMmMxSVNtcDJNamNpR3lFL1VQYlc5ZWpVSVh0RkpBSm92WmpuNlAzZ2x5SVFCM3dxDQpBVzZKRSt4RUJXSDdJeCtVdjZZTkFGZmozVU82dk5qdHVHYlRDV1lEQ0VKUmtkbWVFN1FkVFlEbzdQeGdQbDF0DQo2eE1HUExPQmRZTkpURW9qdlJZQlR0KzZpdzBlWitNQ1VkVUZOZWFzZVFoMHAxUmdxTTkvN3Q3NVFDTkxsMW9PDQorQ2Z1NHZOZWYvVHBkM0xIY1VvUWhRMk9WaU9WRmJxMS9ZdS9uYXRXRFBEY1hiM3BlVGNOSE9qbVhBb2JvV2J6DQpyRGt4ajV6N3ZjSjlMTUVYdmlQNkZiL2lYRG1KaDc0L282QWdjOGVmYjBXVG1GalBGRnRNQ0hyaW5iKzVBZzBFDQpWWUY4SWdFUUFMVVZTMkdFU1ErRjFTNGIwSklPMU0ydFZCWGlINE41NmVVemNEWHhYYlNaZ0NneDRhV2hrNXZKDQpRdTdNMTFndHFJb2lSYm11RnBVbURPRy9rQjdEeEJaUG44V3FjQktwa3k2R1VQL0EvZW1hQVpUd05RZGNEQWhEDQpmb0JrSmRoVnowRDJqbmtCZmZZTDA1NXAvcjFFcnMraVRUTk9hcy8wdWM1MEMzMnhSODIzclEyTmw2L2ZmSU02DQpKcWZRZW5oUnZxVVdQajlvcUVTSE1zcUVkY2VTd1MvVkM3Uk40eFFYSlhmRVd1MnE0QWhzNjJSbXZDWG5UdzFBDQpzUGNweXNvQm9vOElXK1YxTVZRRVp1QUpSbjJBR08vUTd1WTlUUjRndUhiM3dYUmZaM2swS1ZVc3lxcWR1c0ppDQpUM0R4eEJ3NkdjS2RPSDZ0NDFZczNlWWdPcmMrUmNTZGNIWVNweGFMdkVJaHd6YXJaK21xY3AzZ3ovSmtQbFhTDQoydHgybDZOWkhjZ1JlT003SWhxTXV4ekJicGNyc2JCbUxCZW1DK3U3aG9QVGpVZFRIS0V3dldhZVhMNHZnc3FRDQpCYkVlS21YZXA1c1pnM2tIdHBYelk5WmZQUXJ0R0I4dkhHcmZhWkljQ0t1WHdaV0dMNUdHV0t3M1RTUDRmQUlBDQpqTHhMZjVNeXlYY3N1Z2JhaTJPWS9INHNBdXZKSHNtR3RlcmdHa251UitpRmR0NWVsMXdnUktQMXIxS2Rtdk1tDQp3c1NheWM2ZVNFS2Q2ODl4M3pzbUF0bmhZTTMxb01rUGRlWVJibk4xNWdMRzd2Y3NWZTRqdWcwWVRxUXQyV0duDQpod2pCQTBpMnFmVG9yWGVtV0Noc3hLbGx2WTlhQjNTVDhJNlJNYXQwa1MwOEZNRCtDZWQvQUJFQkFBR0pBaDhFDQpHQUVDQUFrRkFsV0JmQ0lDR3d3QUNna1FKQUNGQ2Fkb2d0TmljQS85SE9NNDAyVkdIbG11WVBjcnZFVGhIcU1LDQpLT1R0TkZzcnJQcDY3ZEdZYVQ4VEdUZ3kxT0c0T3lzMnkraHJ3cW5VSzZkWEp4WDIvUkJmUnVPL2d3NjVSQ2ZDDQo5bldlTWtxSlRqSEpDS05UWWZYTjRPNGFnNDQ0VVpQY09NcStJeWlXRjMvc2g2NzR6Q2tDbTVEUS9GSDhJSjhZDQpuNGpNb3hlN0c0OFBDR3RnY0pLWG84TkJ6eHdYSkg0RENkazdyTmRyYnJuQ3dPYkc4aDY1MzBXcm16S3V5RkNKDQpRUDVKQTBNU3gyM0oyT3JLMlltVk1oVGVPMGN6SjhmUmlwOVdlOS9xQWZaR1VFVytzZXkrbkxtVDVPSnEwNGFsDQpWYTlnMmE0blh4ekR5ODQraFJYUU5VZUNSWW4veXM4ZDhxOUhaTnYzSzM2SGxJTGN1V2F6TlRUaDBjdVd1cEJkDQpTbElFdVdiSWRia25ZcEdzbVMxY1BlR2kwYmRvTFp2OTBCSVZtZE9TL3ZYUDAyZkdVYmx5QU5jaUtjQlBSaE9JDQorejZoendkWitRdmpQYnhaVWlnNVh1dnFCaElIb1J0TUJKZGYyNHlzRnVmL2Q0dVp6VEM4VDRyVVFPK0wyOWJ0DQo4cmlUMGRnNmNIVndDMFZIODlGYU8xRmR1dnNDdEF3ZEFneFN6T01CRUNOT21WQlRoSWlXZExubnMxMDdScDRGDQpFQ2srbDJVQ2psN3p3R3FKcWNkMUJRSytVZ1p3VkcyVVYxMUNyaG9wS1U1b0dMODRuNURhTzJuNlJ2OHdWZHJ0DQpNS3ZxaTdFa2d2WnBZMElISjdycDBHenJ2MHFtd0phVUZDV0ZvZ0lUTnlpamIxSlZzVWdEVE1oQWtFZ0VzSVl5DQpqdGN3SnJIdWU1WG44VVBTTGtFPQ0KPVNXaUENCi0tLS0tRU5EIFBHUCBQVUJMSUMgS0VZIEJMT0NLLS0tLS0='|base64 -d| apt-key add -"]
-  apt_02_clean: ["curtin", "in-target", "--", "apt-get", "clean"]
-  apt_03_update: ["curtin", "in-target", "--", "apt-get", "update"]
-  apt_04_kernel: ["curtin", "in-target", "--", "apt-get", "install", "linux-headers-3.19.0-26", "linux-headers-3.19.0-26-generic", "linux-image-3.19.0-26-generic","linux-image-extra-3.19.0-26-generic"]
-  salt_00_announce: ["curtin", "in-target", "--", "echo", "'### Installing and Configuring Salt Minion ###'"]
-
 {% endraw %}
-
-  salt_01_install: ["curtin", "in-target", "--", "apt-get", "-y", "install", "salt-minion"]
-
-  salt_02_hostname_set: ["curtin", "in-target", "--", "echo", "{% raw %}{{node.hostname}}{% endraw %}.{{pillar.linux.system.domain}}"]
-  salt_03_hostname_get: ["curtin", "in-target", "--", "sh", "-c", "echo 'id: {% raw %}{{node.hostname}}{% endraw %}.{{pillar.linux.system.domain}}' >> /etc/salt/minion"]
-  salt_04_master: ["curtin", "in-target", "--", "sh", "-c", "echo 'master: 10.0.170.7' >> /etc/salt/minion"]
-  salt_05_announce: ["curtin", "in-target", "--", "echo", "'### Salt Minion is configured successfully ###'"]
-  salt_06_show_conf_hostname: ["curtin", "in-target", "--", "cat", "/etc/salt/minion"]
-  salt_07_show_hosts: ["curtin", "in-target", "--", "cat", "/etc/hosts"]
-
-{% raw %}
-power_state:
-  mode: reboot
-
-{{if node.split_arch()[0] in {'i386', 'amd64'} }}
-apt_mirrors:
-  ubuntu_archive: http://{{main_archive_hostname}}/{{main_archive_directory}}
-  ubuntu_security: http://{{main_archive_hostname}}/{{main_archive_directory}}
-{{else}}
-apt_mirrors:
-  ubuntu_archive: http://{{ports_archive_hostname}}/{{ports_archive_directory}}
-  ubuntu_security: http://{{ports_archive_hostname}}/{{ports_archive_directory}}
-{{endif}}
-
-{{if enable_http_proxy}}
-{{if http_proxy }}
-apt_proxy: {{http_proxy}}
-{{else}}
-apt_proxy: http://{{server_host}}:8000/
-{{endif}}
-{{endif}}
-
-{% endraw %}
-
