@@ -92,8 +92,14 @@ class MaasObject(object):
             extra[name] = {v['name']: v[key] for v in
                             json.loads(self._maas.get(url_call).read())}
         if self._all_elements_url:
+            all_elements = {}
             elements = self._maas.get(self._all_elements_url).read()
-            all_elements = {v[self._element_key]: v for v in json.loads(elements)}
+            res_json = json.loads(elements)
+            for element in res_json:
+                if isinstance(element, (str, unicode)):
+                    all_elements[element] = {}
+                else:
+                    all_elements[element[self._element_key]] = element
         else:
             all_elements = {}
         ret = {
@@ -266,10 +272,10 @@ class Device(MaasObject):
         return data
 
     def update(self, new, old):
-        new_macs = set(new['mac_addresses'])
-        old_macs = set(v['mac_address'] for v in old[interface_set])
-        if new_macs - old_macs:
+        old_macs = set(v['mac_address'].lower() for v in old['interface_set'])
+        if new['mac_addresses'].lower() not in old_macs:
             self._update = False
+            LOG.info('Mac changed deleting old device %s', old['system_id'])
             self._maas.delete(u'api/2.0/devices/{0}/'.format(old['system_id']))
         else:
             new[self._update_key] = str(old[self._update_key])
@@ -280,14 +286,14 @@ class Device(MaasObject):
         resp_json = json.loads(response)
         system_id = resp_json['system_id']
         iface_id = resp_json['interface_set'][0]['id']
-        self._link_interface(maas, system_id, iface_id)
+        self._link_interface(system_id, iface_id)
         return response
 
     def _link_interface(self, system_id, interface_id):
         data = {
             'mode': self._interface.get('mode', 'STATIC'),
-            'subnet': self._interface.get('subnet'),
-            'ip_address': self._interface.get('ip_address'),
+            'subnet': self._interface['subnet'],
+            'ip_address': self._interface['ip_address'],
         }
         if 'default_gateway' in self._interface:
             data['default_gateway'] = self._interface.get('default_gateway')
@@ -328,11 +334,11 @@ class Machine(MaasObject):
         return data
 
     def update(self, new, old):
-        new_macs = set(new['mac_addresses'])
-        old_macs = set(v['mac_address'] for v in old[interface_set])
-        if new_macs - old_macs:
+        old_macs = set(v['mac_address'].lower() for v in old['interface_set'])
+        if new['mac_addresses'].lower() not in old_macs:
             self._update = False
-            self._maas.delete(u'api/2.0/machiens/{0}/'.format(old['system_id']))
+            LOG.info('Mac changed deleting old machine %s', old['system_id'])
+            self._maas.delete(u'api/2.0/machines/{0}/'.format(old['system_id']))
         else:
             new[self._update_key] = str(old[self._update_key])
         return new
@@ -356,11 +362,11 @@ class Machine(MaasObject):
                         **data)
 
     def send(self, data):
-        response = super(Device, self).send(data)
+        response = super(Machine, self).send(data)
         resp_json = json.loads(response)
         system_id = resp_json['system_id']
         iface_id = resp_json['interface_set'][0]['id']
-        self._link_interface(maas, system_id, iface_id)
+        self._link_interface(system_id, iface_id)
         return response
 
 
@@ -395,8 +401,8 @@ class CommissioningScripts(MaasObject):
         super(CommissioningScripts, self).__init__()
         self._all_elements_url = u'api/2.0/commissioning-scripts/'
         self._create_url = u'api/2.0/commissioning-scripts/'
-        self._update_url = u'api/2.0/commissioning-scripts/{0}/'
         self._config_path = 'region.commissioning_scripts'
+        self._update_url = u'api/2.0/commissioning-scripts/{0}'
         self._update_key = 'name'
 
     def fill_data(self, name, file_path):
@@ -419,7 +425,7 @@ class MaasConfig(MaasObject):
     def fill_data(self, name, value):
         data = {
             'name': name,
-            'value': value,
+            'value': str(value),
         }
         return data
 
