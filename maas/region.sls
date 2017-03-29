@@ -53,6 +53,8 @@ maas_apache_headers:
   - user: root
   - group: root
   - mode: 644
+  - context:
+      salt_master_ip: {{ region.salt_master_ip }}
   - require:
     - pkg: maas_region_packages
 
@@ -63,6 +65,8 @@ maas_apache_headers:
   - user: root
   - group: root
   - mode: 644
+  - context:
+      salt_master_ip: {{ region.salt_master_ip }}
   - require:
     - pkg: maas_region_packages
 
