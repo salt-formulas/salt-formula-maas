@@ -108,6 +108,7 @@ class MaasObject(object):
             'updated': [],
         }
         for name, config_data in config.iteritems():
+            self._update = False
             try:
                 data = self.fill_data(name, config_data, **extra)
                 if name in all_elements:
