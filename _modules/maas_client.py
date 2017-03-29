@@ -22,9 +22,9 @@ import gzip
 from io import BytesIO
 import urllib2
 
-from apiclient.encode_json import encode_json_data
-from apiclient.multipart import encode_multipart_data
-from apiclient.utils import urlencode
+from encode_json import encode_json_data
+from multipart import encode_multipart_data
+from utils import urlencode
 import oauth.oauth as oauth
 
 

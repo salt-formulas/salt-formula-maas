@@ -27,7 +27,7 @@ LOG = logging.getLogger(__name__)
 # Import third party libs
 HAS_MASS = False
 try:
-    from apiclient.maas_client import MAASClient, MAASDispatcher, MAASOAuth
+    from maas_client import MAASClient, MAASDispatcher, MAASOAuth
     HAS_MASS = True
 except ImportError:
     LOG.exception('why??')
