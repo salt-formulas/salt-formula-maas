@@ -56,6 +56,16 @@ maas_apache_headers:
   - require:
     - pkg: maas_region_packages
 
+/etc/maas/preseeds/curtin_userdata_amd64_generic_xenial:
+  file.managed:
+  - source: salt://maas/files/curtin_userdata_amd64_generic_xenial
+  - template: jinja
+  - user: root
+  - group: root
+  - mode: 644
+  - require:
+    - pkg: maas_region_packages
+
 maas_region_services:
   service.running:
   - enable: true
@@ -107,7 +117,6 @@ maas_subnets:
   - require:
     - module: maas_config
     - module: maas_fabrics
-    - module: maas_config
 
 maas_devices:
   module.run:
@@ -115,16 +124,6 @@ maas_devices:
   - require:
     - module: maas_config
     - module: maas_subnets
-    - module: maas_config
-
-maas_machines:
-  module.run:
-  - name: maas.process_machines
-  - require:
-    - module: maas_config
-    - module: maas_subnets
-    - module: maas_config
-    - module: maas_commissioning_scripts
 
 maas_dhcp_snippets:
   module.run:
@@ -136,7 +135,6 @@ maas_package_repositories:
   module.run:
   - name: maas.process_package_repositories
   - require:
-    - module: maas_config
     - module: maas_config
 
 maas_boot_resources:
