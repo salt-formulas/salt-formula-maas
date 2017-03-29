@@ -143,4 +143,10 @@ maas_boot_resources:
   - require:
     - module: maas_config
 
+maas_domain:
+  module.run:
+  - name: maas.process_domain
+  - require:
+    - module: maas_config
+
 {%- endif %}
