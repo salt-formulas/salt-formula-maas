@@ -21,6 +21,7 @@ Single MAAS region service [single UI/API]
 .. code-block:: yaml
 
   maas:
+    salt_master_ip: 192.168.0.10
     region:
       theme: mirantis
       bind:
@@ -118,6 +119,28 @@ Single MAAS region service [single UI/API]
             ip_address: 192.168.10.10
             subnet: cidr:192.168.10.0/24
           mac: '66:55:44:33:22:11'
+      commissioning_scripts:
+        00-maas-06-create-raid.sh: /srv/salt/reclass/scripts/commisioning_script.sh
+      maas_config:
+        domain: mydomain.local
+        http_proxy: http://192.168.0.10:3142
+        commissioning_distro_series: xenial
+        default_distro_series: xenial
+        default_osystem: 'ubuntu'
+        default_storage_layout: lvm
+        disk_erase_with_secure_erase: true
+        dnssec_validation: 'no'
+        enable_third_party_drivers: true
+        maas_name: cfg01
+        network_discovery: 'enabled'
+        active_discovery_interval: '600'
+        ntp_external_only: true
+        ntp_servers: 10.10.11.23 10.10.11.24
+        upstream_dns: 192.168.12.13
+        enable_http_proxy: true
+        default_min_hwe_kernel: ''
+       sshprefs:
+        - 'ssh-rsa ASDFOSADFISdfasdfasjdklfjasdJFASDJfASdf923@AAAAB3NzaC1yc2EAAAADAQABAAACAQCv8ISOESGgYUOycYw1SAs/SfHTqtSCTephD/7o2+mEZO53xN98sChiFscFaPA2ZSMoZbJ6MQLKcWKMK2OaTdNSAvn4UE4T6VP0ccdumHDNRwO3f6LptvXr9NR5Wocz2KAgptk+uaA8ytM0Aj9NT0UlfjAXkKnoKyNq6yG+lx4HpwolVaFSlqRXf/iuHpCrspv/u1NW7ReMElJoXv+0zZ7Ow0ZylISdYkaqbV8QatCb17v1+xX03xLsZigfugce/8CDsibSYvJv+Hli5CCBsKgfFqLy4R5vGxiLSVzG/asdjalskjdlkasjdasd/asdajsdkjalaksdjfasd/fa/sdf/asd/fas/dfsadf blah@blah'
 
 
 Single MAAS cluster service [multiple racks]
