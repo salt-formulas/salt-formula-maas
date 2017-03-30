@@ -153,4 +153,10 @@ maas_domain:
   - require:
     - module: maas_config
 
+maas_sshprefs:
+  module.run:
+  - name: maas.process_sshprefs
+  - require:
+    - module: maas_config
+
 {%- endif %}
