@@ -21,3 +21,4 @@ maas:
       password: password
       username: maas
     enabled: true
+    salt_master_ip: 127.0.0.1
