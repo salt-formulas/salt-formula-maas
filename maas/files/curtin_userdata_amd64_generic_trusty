@@ -24,7 +24,7 @@ late_commands:
 {% endraw %}
   salt_02_hostname_set: ["curtin", "in-target", "--", "echo", "{% raw %}{{node.hostname}}{% endraw %}.{{pillar.linux.system.domain}}"]
   salt_03_hostname_get: ["curtin", "in-target", "--", "sh", "-c", "echo 'id: {% raw %}{{node.hostname}}{% endraw %}.{{pillar.linux.system.domain}}' >> /etc/salt/minion"]
-  salt_04_master: ["curtin", "in-target", "--", "sh", "-c", "echo 'master: {{grains['ip4_interfaces']['enp0s3'][0]}}' >> /etc/salt/minion"]
+  salt_04_master: ["curtin", "in-target", "--", "sh", "-c", "echo 'master: {{ salt_master_ip }} >> /etc/salt/minion"]
 {% raw %}
 {{if third_party_drivers and driver}}
   driver_00_key_get: curtin in-target -- sh -c "/bin/echo -en '{{key_string}}' > /tmp/maas-{{driver['package']}}.gpg"

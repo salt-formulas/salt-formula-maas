@@ -53,6 +53,8 @@ maas_apache_headers:
   - user: root
   - group: root
   - mode: 644
+  - context:
+      salt_master_ip: {{ region.salt_master_ip }}
   - require:
     - pkg: maas_region_packages
 
@@ -63,6 +65,8 @@ maas_apache_headers:
   - user: root
   - group: root
   - mode: 644
+  - context:
+      salt_master_ip: {{ region.salt_master_ip }}
   - require:
     - pkg: maas_region_packages
 
@@ -146,6 +150,12 @@ maas_boot_resources:
 maas_domain:
   module.run:
   - name: maas.process_domain
+  - require:
+    - module: maas_config
+
+maas_sshprefs:
+  module.run:
+  - name: maas.process_sshprefs
   - require:
     - module: maas_config
 
