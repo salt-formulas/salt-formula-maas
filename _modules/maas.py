@@ -139,8 +139,9 @@ class MaasObject(object):
               except Exception as e:
                   LOG.exception('Failed for object %s reason %s', name, e)
                   ret['errors'][name] = str(e)
-        except Exception:
-           LOG.exception('WTF')
+        except Exception as e:
+           LOG.exception('Error Global')
+           raise
         if ret['errors']:
             raise Exception(ret)
         return ret
@@ -575,6 +576,22 @@ class Domain(MaasObject):
         return ret
 
 
+class MachinesStatus(MaasObject):
+    @classmethod
+    def execute(cls):
+        self._maas = _create_maas_client()
+        result = self._maas.get(u'api/2.0/machines/')
+        json_result = json.loads(result.read())
+        res = []
+        for machine in json_result:
+            res.append({
+                'hostname': machine['hostname']
+                'system_id': machine['system_id']
+                'status': machine['status']
+                })
+        return res
+
+
 def process_fabrics():
     return Fabric().process()
 
@@ -593,6 +610,12 @@ def process_devices():
 def process_machines():
     return Machine().process()
 
+def process_assign_machines_ip():
+    return AssignMachinesIP().process()
+
+def machines_status():
+    return MachinesStatus.execute()
+
 def process_boot_resources():
     return BootResource().process()
 
@@ -607,6 +630,3 @@ def process_domain():
 
 def process_sshprefs():
     return SSHPrefs().process()
-
-def process_assign_machines_ip():
-    return AssignMachinesIP().process()
