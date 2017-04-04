@@ -579,17 +579,27 @@ class Domain(MaasObject):
 class MachinesStatus(MaasObject):
     @classmethod
     def execute(cls):
-        self._maas = _create_maas_client()
-        result = self._maas.get(u'api/2.0/machines/')
+        cls._maas = _create_maas_client()
+        result = cls._maas.get(u'api/2.0/machines/')
         json_result = json.loads(result.read())
         res = []
+        status_name_dict = dict([
+            (0, 'New'), (1, 'Commissioning'), (2, 'Failed commissioning'),
+            (3, 'Missing'), (4, 'Ready'), (5, 'Reserved'), (10, 'Allocated'),
+            (9, 'Deploying'), (6, 'Deployed'), (7, 'Retired'), (8, 'Broken'),
+            (11, 'Failed deployment'), (12, 'Releasing'),
+            (13, 'Releasing failed'), (14, 'Disk erasing'),
+            (15, 'Failed disk erasing')])
+        summary = collections.Counter()
         for machine in json_result:
+            status = status_name_dict[machine['status']]
+            summary[status] += 1
             res.append({
-                'hostname': machine['hostname']
-                'system_id': machine['system_id']
-                'status': machine['status']
+                'hostname': machine['hostname'],
+                'system_id': machine['system_id'],
+                'status': status,
                 })
-        return res
+        return {'machines':res, 'summary': summary}
 
 
 def process_fabrics():
