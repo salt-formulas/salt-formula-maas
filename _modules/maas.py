@@ -77,55 +77,70 @@ class MaasObject(object):
         if self._update:
             return self._maas.put(self._update_url.format(data[self._update_key]), **data).read()
         if isinstance(self._create_url, tuple):
-            return self._maas.post(*self._create_url, **data).read()
-        return self._maas.post(self._create_url, None, **data).read()
+            return self._maas.post(self._create_url[0].format(**data),
+                                   *self._create_url[1:], **data).read()
+        return self._maas.post(self._create_url.format(**data), None, **data).read()
 
     def process(self):
-        config = __salt__['config.get']('maas')
-        for part in self._config_path.split('.'):
-            config = config.get(part, {})
-        extra = {}
-        for name, url_call in self._extra_data_urls.iteritems():
-            key = 'id'
-            if isinstance(url_call, tuple):
-                url_call, key = url_call[:]
-            extra[name] = {v['name']: v[key] for v in
-                            json.loads(self._maas.get(url_call).read())}
-        if self._all_elements_url:
-            all_elements = {}
-            elements = self._maas.get(self._all_elements_url).read()
-            res_json = json.loads(elements)
-            for element in res_json:
-                if isinstance(element, (str, unicode)):
-                    all_elements[element] = {}
-                else:
-                    all_elements[element[self._element_key]] = element
-        else:
-            all_elements = {}
-        ret = {
-            'success': [],
-            'errors': {},
-            'updated': [],
-        }
-        for name, config_data in config.iteritems():
-            self._update = False
-            try:
-                data = self.fill_data(name, config_data, **extra)
-                if name in all_elements:
-                    self._update = True
-                    data = self.update(data, all_elements[name])
-                    self.send(data)
-                    ret['updated'].append(name)
-                else:
-                    self.send(data)
-                    ret['success'].append(name)
-            except urllib2.HTTPError as e:
-                etxt = e.read()
-                LOG.exception('Failed for object %s reason %s', name, etxt)
-                ret['errors'][name] = str(etxt)
-            except Exception as e:
-                LOG.exception('Failed for object %s reason %s', name, e)
-                ret['errors'][name] = str(e)
+        try:
+          config = __salt__['config.get']('maas')
+          for part in self._config_path.split('.'):
+              config = config.get(part, {})
+          extra = {}
+          for name, url_call in self._extra_data_urls.iteritems():
+              key = 'id'
+              key_name = 'name'
+              if isinstance(url_call, tuple):
+                  if len(url_call) == 2:
+                      url_call, key = url_call[:]
+                  else:
+                      url_call, key, key_name = url_call[:]
+              if key:
+                  extra[name] = {v[key_name]: v[key] for v in
+                                 json.loads(self._maas.get(url_call).read())}
+              else:
+                  extra[name] = {v[key_name]: v for v in
+                                 json.loads(self._maas.get(url_call).read())}
+          if self._all_elements_url:
+              all_elements = {}
+              elements = self._maas.get(self._all_elements_url).read()
+              res_json = json.loads(elements)
+              for element in res_json:
+                  if isinstance(element, (str, unicode)):
+                      all_elements[element] = {}
+                  else:
+                      all_elements[element[self._element_key]] = element
+          else:
+              all_elements = {}
+          ret = {
+              'success': [],
+              'errors': {},
+              'updated': [],
+          }
+          for name, config_data in config.iteritems():
+              self._update = False
+              try:
+                  data = self.fill_data(name, config_data, **extra)
+                  if data is None:
+                      ret['updated'].append(name)
+                      continue
+                  if name in all_elements:
+                      self._update = True
+                      data = self.update(data, all_elements[name])
+                      self.send(data)
+                      ret['updated'].append(name)
+                  else:
+                      self.send(data)
+                      ret['success'].append(name)
+              except urllib2.HTTPError as e:
+                  etxt = e.read()
+                  LOG.exception('Failed for object %s reason %s', name, etxt)
+                  ret['errors'][name] = str(etxt)
+              except Exception as e:
+                  LOG.exception('Failed for object %s reason %s', name, e)
+                  ret['errors'][name] = str(e)
+        except Exception:
+           LOG.exception('WTF')
         if ret['errors']:
             raise Exception(ret)
         return ret
@@ -318,12 +333,11 @@ class Machine(MaasObject):
         self._update_key = 'system_id'
 
     def fill_data(self, name, machine_data):
-        self._interface = machine_data['interface']
         power_data = machine_data['power_parameters']
         data = {
             'hostname': name,
             'architecture': machine_data.get('architecture', 'amd64/generic'),
-            'mac_addresses': self._interface['mac'],
+            'mac_addresses': machine_data['interface']['mac'],
             'power_type': machine_data.get('power_type', 'ipmi'),
             'power_parameters_power_address': power_data['power_address'],
         }
@@ -344,31 +358,34 @@ class Machine(MaasObject):
             new[self._update_key] = str(old[self._update_key])
         return new
 
-    def _link_interface(self, system_id, interface_id):
-        if 'ip' not in self._interface:
+
+class AssignMachinesIP(MaasObject):
+    def __init__(self):
+        super(AssignMachinesIP, self).__init__()
+        self._all_elements_url = None
+        self._create_url = (u'/api/2.0/nodes/{system_id}/interfaces/{interface_id}/', 'link_subnet')
+        self._config_path = 'region.machines'
+        self._element_key = 'hostname'
+        self._update_key = 'system_id'
+        self._extra_data_urls = {'machines' : (u'api/2.0/machines/', None, 'hostname')}
+
+    def fill_data(self, name, data, machines):
+        interface = data['interface']
+        machine = machines[name]
+        if 'ip' not in interface:
             return
         data = {
             'mode': 'STATIC',
-            'subnet': self._interface.get('subnet'),
-            'ip_address': self._interface.get('ip'),
+            'subnet': str(interface.get('subnet')),
+            'ip_address': str(interface.get('ip')),
         }
-        if 'default_gateway' in self._interface:
-            data['default_gateway'] = self._interface.get('gateway')
+        if 'default_gateway' in interface:
+            data['default_gateway'] = interface.get('gateway')
         if self._update:
             data['force'] = '1'
-        LOG.info('interfaces link_subnet %s %s %s', system_id, interface_id,
-                _format_data(data))
-        self._maas.post(u'/api/2.0/nodes/{0}/interfaces/{1}/'
-                        .format(system_id, interface_id), 'link_subnet',
-                        **data)
-
-    def send(self, data):
-        response = super(Machine, self).send(data)
-        resp_json = json.loads(response)
-        system_id = resp_json['system_id']
-        iface_id = resp_json['interface_set'][0]['id']
-        self._link_interface(system_id, iface_id)
-        return response
+        data['system_id'] = str(machine['system_id'])
+        data['interface_id'] = str(machine['interface_set'][0]['id'])
+        return data
 
 
 class BootResource(MaasObject):
@@ -590,3 +607,6 @@ def process_domain():
 
 def process_sshprefs():
     return SSHPrefs().process()
+
+def process_assign_machines_ip():
+    return AssignMachinesIP().process()
