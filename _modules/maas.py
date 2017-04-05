@@ -389,23 +389,29 @@ class AssignMachinesIP(MaasObject):
         return data
 
 
+
+
 class DeployMachines(MaasObject):
+    READY = 4
     def __init__(self):
         super(DeployMachines, self).__init__()
         self._all_elements_url = None
         self._create_url = (u'api/2.0/machines/{system_id}/', 'deploy')
         self._config_path = 'region.machines'
         self._element_key = 'hostname'
-        self._extra_data_urls = {'machines': (u'api/2.0/machines/', 'system_id', 'hostname')}
+        self._extra_data_urls = {'machines': (u'api/2.0/machines/', None, 'hostname')}
 
     def fill_data(self, name, machine_data, machines):
+        machine = machines[name]
+        if machine['status'] != self.READY:
+            raise Exception('Not in ready state')
         data = {
-            'system_id': machines[name],
+            'system_id': machine['system_id'],
         }
         if 'os' in machine_data:
-            data['distro_series'] = machine_data['os']
+            data['distro_series'] = machine_data['distro_series']
         if 'hwe_kernel' in machine_data:
-            data['hwe_kernel'] = machine_data['kernel']
+            data['hwe_kernel'] = machine_data['hwe_kernel']
         return data
 
 
