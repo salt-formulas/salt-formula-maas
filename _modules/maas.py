@@ -15,6 +15,7 @@ from __future__ import absolute_import
 
 import io
 import logging
+import collections
 import os.path
 import subprocess
 import urllib2
@@ -32,6 +33,7 @@ try:
 except ImportError:
     LOG.exception('why??')
 
+
 def __virtual__():
     '''
     Only load this module if maas-client
@@ -41,27 +43,30 @@ def __virtual__():
         return 'maas'
     return False
 
+
 APIKEY_FILE = '/var/lib/maas/.maas_credentials'
+
 
 def _format_data(data):
     class Lazy:
         def __str__(self):
             return ' '.join(['{0}={1}'.format(k, v)
-                             for k, v in data.iteritems()])
-
-    return Lazy()
+                            for k, v in data.iteritems()])
+        return Lazy()
 
 
 def _create_maas_client():
     global APIKEY_FILE
     try:
-        api_token = file(APIKEY_FILE).read().splitlines()[-1].strip().split(':')
+        api_token = file(APIKEY_FILE).read().splitlines()[-1].strip()\
+            .split(':')
     except:
         LOG.exception('token')
     auth = MAASOAuth(*api_token)
     api_url = 'http://localhost:5240/MAAS'
     dispatcher = MAASDispatcher()
     return MAASClient(auth, dispatcher, api_url)
+
 
 class MaasObject(object):
     def __init__(self):
@@ -75,73 +80,74 @@ class MaasObject(object):
     def send(self, data):
         LOG.info('%s %s', self.__class__.__name__.lower(), _format_data(data))
         if self._update:
-            return self._maas.put(self._update_url.format(data[self._update_key]), **data).read()
+            return self._maas.put(
+                self._update_url.format(data[self._update_key]), **data).read()
         if isinstance(self._create_url, tuple):
             return self._maas.post(self._create_url[0].format(**data),
                                    *self._create_url[1:], **data).read()
-        return self._maas.post(self._create_url.format(**data), None, **data).read()
+            return self._maas.post(self._create_url.format(**data),
+                                   None, **data).read()
 
     def process(self):
+        ret = {
+            'success': [],
+            'errors': {},
+            'updated': [],
+        }
         try:
-          config = __salt__['config.get']('maas')
-          for part in self._config_path.split('.'):
-              config = config.get(part, {})
-          extra = {}
-          for name, url_call in self._extra_data_urls.iteritems():
-              key = 'id'
-              key_name = 'name'
-              if isinstance(url_call, tuple):
-                  if len(url_call) == 2:
-                      url_call, key = url_call[:]
-                  else:
-                      url_call, key, key_name = url_call[:]
-              if key:
-                  extra[name] = {v[key_name]: v[key] for v in
-                                 json.loads(self._maas.get(url_call).read())}
-              else:
-                  extra[name] = {v[key_name]: v for v in
-                                 json.loads(self._maas.get(url_call).read())}
-          if self._all_elements_url:
-              all_elements = {}
-              elements = self._maas.get(self._all_elements_url).read()
-              res_json = json.loads(elements)
-              for element in res_json:
-                  if isinstance(element, (str, unicode)):
-                      all_elements[element] = {}
-                  else:
-                      all_elements[element[self._element_key]] = element
-          else:
-              all_elements = {}
-          ret = {
-              'success': [],
-              'errors': {},
-              'updated': [],
-          }
-          for name, config_data in config.iteritems():
-              self._update = False
-              try:
-                  data = self.fill_data(name, config_data, **extra)
-                  if data is None:
-                      ret['updated'].append(name)
-                      continue
-                  if name in all_elements:
-                      self._update = True
-                      data = self.update(data, all_elements[name])
-                      self.send(data)
-                      ret['updated'].append(name)
-                  else:
-                      self.send(data)
-                      ret['success'].append(name)
-              except urllib2.HTTPError as e:
-                  etxt = e.read()
-                  LOG.exception('Failed for object %s reason %s', name, etxt)
-                  ret['errors'][name] = str(etxt)
-              except Exception as e:
-                  LOG.exception('Failed for object %s reason %s', name, e)
-                  ret['errors'][name] = str(e)
+            config = __salt__['config.get']('maas')
+            for part in self._config_path.split('.'):
+                config = config.get(part, {})
+            extra = {}
+            for name, url_call in self._extra_data_urls.iteritems():
+                key = 'id'
+                key_name = 'name'
+                if isinstance(url_call, tuple):
+                    if len(url_call) == 2:
+                        url_call, key = url_call[:]
+                    else:
+                        url_call, key, key_name = url_call[:]
+                json_res = json.loads(self._maas.get(url_call).read())
+                if key:
+                    extra[name] = {v[key_name]: v[key] for v in json_res}
+                else:
+                    extra[name] = {v[key_name]: v for v inajson_res}
+            if self._all_elements_url:
+                all_elements = {}
+                elements = self._maas.get(self._all_elements_url).read()
+                res_json = json.loads(elements)
+                for element in res_json:
+                    if isinstance(element, (str, unicode)):
+                        all_elements[element] = {}
+                    else:
+                        all_elements[element[self._element_key]] = element
+            else:
+                all_elements = {}
+            for name, config_data in config.iteritems():
+                self._update = False
+                try:
+                    data = self.fill_data(name, config_data, **extra)
+                    if data is None:
+                        ret['updated'].append(name)
+                        continue
+                    if name in all_elements:
+                        self._update = True
+                        data = self.update(data, all_elements[name])
+                        self.send(data)
+                        ret['updated'].append(name)
+                    else:
+                        self.send(data)
+                        ret['success'].append(name)
+                except urllib2.HTTPError as e:
+                    etxt = e.read()
+                    LOG.exception('Failed for object %s reason %s', name, etxt)
+                    ret['errors'][name] = str(etxt)
+                except Exception as e:
+                    LOG.exception('Failed for object %s reason %s', name, e)
+                    ret['errors'][name] = str(e)
         except Exception as e:
-           LOG.exception('Error Global')
-           raise
+            LOG.exception('Error Global')
+            raise
         if ret['errors']:
             raise Exception(ret)
         return ret
@@ -168,6 +174,7 @@ class Fabric(MaasObject):
         new['id'] = str(old['id'])
         return new
 
+
 class Subnet(MaasObject):
     def __init__(self):
         super(Subnet, self).__init__()
@@ -175,7 +182,7 @@ class Subnet(MaasObject):
         self._create_url = u'api/2.0/subnets/'
         self._update_url = u'api/2.0/subnets/{0}/'
         self._config_path = 'region.subnets'
-        self._extra_data_urls = {'fabrics':u'api/2.0/fabrics/'}
+        self._extra_data_urls = {'fabrics': u'api/2.0/fabrics/'}
 
     def fill_data(self, name, subnet, fabrics):
         data = {
@@ -217,9 +224,11 @@ class Subnet(MaasObject):
         LOG.info('iprange %s', _format_data(data))
         if update:
             LOG.warn('UPDATING %s %s', data, old_data)
-            self._maas.put(u'api/2.0/ipranges/{0}/'.format(old_data['id']), **data)
+            self._maas.put(u'api/2.0/ipranges/{0}/'.format(old_data['id']),
+                           **data)
         else:
             self._maas.post(u'api/2.0/ipranges/', None, **data)
+
 
 class DHCPSnippet(MaasObject):
     def __init__(self):
@@ -232,17 +241,18 @@ class DHCPSnippet(MaasObject):
 
     def fill_data(self, name, snippet, subnets):
         data = {
-             'name': name,
-             'value': snippet['value'],
-             'description': snippet['description'],
-             'enabled': str(snippet['enabled'] and 1 or 0),
-             'subnet': str(subnets[snippet['subnet']]),
+            'name': name,
+            'value': snippet['value'],
+            'description': snippet['description'],
+            'enabled': str(snippet['enabled'] and 1 or 0),
+            'subnet': str(subnets[snippet['subnet']]),
         }
         return data
 
     def update(self, new, old):
         new['id'] = str(old['id'])
         return new
+
 
 class PacketRepository(MaasObject):
     def __init__(self):
@@ -269,6 +279,7 @@ class PacketRepository(MaasObject):
     def update(self, new, old):
         new['id'] = str(old['id'])
         return new
+
 
 class Device(MaasObject):
     def __init__(self):
@@ -317,7 +328,7 @@ class Device(MaasObject):
         if self._update:
             data['force'] = '1'
         LOG.info('interfaces link_subnet %s %s %s', system_id, interface_id,
-                _format_data(data))
+                 _format_data(data))
         self._maas.post(u'/api/2.0/nodes/{0}/interfaces/{1}/'
                         .format(system_id, interface_id), 'link_subnet',
                         **data)
@@ -354,7 +365,8 @@ class Machine(MaasObject):
         if new['mac_addresses'].lower() not in old_macs:
             self._update = False
             LOG.info('Mac changed deleting old machine %s', old['system_id'])
-            self._maas.delete(u'api/2.0/machines/{0}/'.format(old['system_id']))
+            self._maas.delete(u'api/2.0/machines/{0}/'
+                              .format(old['system_id']))
         else:
             new[self._update_key] = str(old[self._update_key])
         return new
@@ -364,11 +376,14 @@ class AssignMachinesIP(MaasObject):
     def __init__(self):
         super(AssignMachinesIP, self).__init__()
         self._all_elements_url = None
-        self._create_url = (u'/api/2.0/nodes/{system_id}/interfaces/{interface_id}/', 'link_subnet')
+        self._create_url = \
+            (u'/api/2.0/nodes/{system_id}/interfaces/{interface_id}/',
+             'link_subnet')
         self._config_path = 'region.machines'
         self._element_key = 'hostname'
         self._update_key = 'system_id'
-        self._extra_data_urls = {'machines' : (u'api/2.0/machines/', None, 'hostname')}
+        self._extra_data_urls = {'machines': (u'api/2.0/machines/',
+                                              None, 'hostname')}
 
     def fill_data(self, name, data, machines):
         interface = data['interface']
@@ -389,17 +404,17 @@ class AssignMachinesIP(MaasObject):
         return data
 
 
-
-
 class DeployMachines(MaasObject):
     READY = 4
+
     def __init__(self):
         super(DeployMachines, self).__init__()
         self._all_elements_url = None
         self._create_url = (u'api/2.0/machines/{system_id}/', 'deploy')
         self._config_path = 'region.machines'
         self._element_key = 'hostname'
-        self._extra_data_urls = {'machines': (u'api/2.0/machines/', None, 'hostname')}
+        self._extra_data_urls = {'machines': (u'api/2.0/machines/',
+                                              None, 'hostname')}
 
     def fill_data(self, name, machine_data, machines):
         machine = machines[name]
@@ -461,6 +476,7 @@ class CommissioningScripts(MaasObject):
     def update(self, new, old):
         return new
 
+
 class MaasConfig(MaasObject):
     def __init__(self):
         super(MaasConfig, self).__init__()
@@ -504,8 +520,8 @@ class SSHPrefs(MaasObject):
             key = 'id'
             if isinstance(url_call, tuple):
                 url_call, key = url_call[:]
-            extra[name] = {v['name']: v[key] for v in
-                            json.loads(self._maas.get(url_call).read())}
+            json_res = json.loads(self._maas.get(url_call).read())
+            extra[name] = {v['name']: v[key] for v in json_res}
         if self._all_elements_url:
             all_elements = {}
             elements = self._maas.get(self._all_elements_url).read()
@@ -539,6 +555,7 @@ class SSHPrefs(MaasObject):
             raise Exception(ret)
         return ret
 
+
 class Domain(MaasObject):
     def __init__(self):
         super(Domain, self).__init__()
@@ -560,6 +577,11 @@ class Domain(MaasObject):
         return new
 
     def process(self):
+        ret = {
+            'success': [],
+            'errors': {},
+            'updated': [],
+        }
         config = __salt__['config.get']('maas')
         for part in self._config_path.split('.'):
             config = config.get(part, {})
@@ -568,8 +590,8 @@ class Domain(MaasObject):
             key = 'id'
             if isinstance(url_call, tuple):
                 url_call, key = url_call[:]
-            extra[name] = {v['name']: v[key] for v in
-                            json.loads(self._maas.get(url_call).read())}
+            json_res = json.loads(self._maas.get(url_call).read())
+            extra[name] = {v['name']: v[key] for v in json_res}
         if self._all_elements_url:
             all_elements = {}
             elements = self._maas.get(self._all_elements_url).read()
@@ -581,11 +603,6 @@ class Domain(MaasObject):
                     all_elements[element[self._element_key]] = element
         else:
             all_elements = {}
-        ret = {
-            'success': [],
-            'errors': {},
-            'updated': [],
-        }
         try:
             data = self.fill_data(config, **extra)
             data = self.update(data, all_elements.values()[0])
@@ -626,47 +643,60 @@ class MachinesStatus(MaasObject):
                 'system_id': machine['system_id'],
                 'status': status,
                 })
-        return {'machines':res, 'summary': summary}
+        return {'machines': res, 'summary': summary}
 
 
 def process_fabrics():
     return Fabric().process()
 
+
 def process_subnets():
     return Subnet().process()
+
 
 def process_dhcp_snippets():
     return DHCPSnippet().process()
 
+
 def process_package_repositories():
     return PacketRepository().process()
+
 
 def process_devices():
     return Device().process()
 
+
 def process_machines():
     return Machine().process()
+
 
 def process_assign_machines_ip():
     return AssignMachinesIP().process()
 
+
 def machines_status():
     return MachinesStatus.execute()
+
 
 def deploy_machines():
     return DeployMachines().process()
 
+
 def process_boot_resources():
     return BootResource().process()
+
 
 def process_maas_config():
     return MaasConfig().process()
 
+
 def process_commissioning_scripts():
     return CommissioningScripts().process()
 
+
 def process_domain():
     return Domain().process()
+
 
 def process_sshprefs():
     return SSHPrefs().process()
