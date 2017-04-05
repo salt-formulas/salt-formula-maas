@@ -389,6 +389,26 @@ class AssignMachinesIP(MaasObject):
         return data
 
 
+class DeployMachines(MaasObject):
+    def __init__(self):
+        super(DeployMachines, self).__init__()
+        self._all_elements_url = None
+        self._create_url = (u'api/2.0/machines/{system_id}/', 'deploy')
+        self._config_path = 'region.machines'
+        self._element_key = 'hostname'
+        self._extra_data_urls = {'machines': (u'api/2.0/machines/', 'system_id', 'hostname')}
+
+    def fill_data(self, name, machine_data, machines):
+        data = {
+            'system_id': machines[name],
+        }
+        if 'os' in machine_data:
+            data['distro_series'] = machine_data['os']
+        if 'hwe_kernel' in machine_data:
+            data['hwe_kernel'] = machine_data['kernel']
+        return data
+
+
 class BootResource(MaasObject):
     def __init__(self):
         super(BootResource, self).__init__()
@@ -414,6 +434,7 @@ class BootResource(MaasObject):
     def update(self, new, old):
         self._update = False
         return new
+
 
 class CommissioningScripts(MaasObject):
     def __init__(self):
@@ -625,6 +646,9 @@ def process_assign_machines_ip():
 
 def machines_status():
     return MachinesStatus.execute()
+
+def deploy_machines():
+    return DeployMachines().process()
 
 def process_boot_resources():
     return BootResource().process()
