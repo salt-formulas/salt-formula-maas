@@ -52,7 +52,7 @@ def _format_data(data):
         def __str__(self):
             return ' '.join(['{0}={1}'.format(k, v)
                             for k, v in data.iteritems()])
-        return Lazy()
+    return Lazy()
 
 
 def _create_maas_client():
@@ -111,7 +111,7 @@ class MaasObject(object):
                 if key:
                     extra[name] = {v[key_name]: v[key] for v in json_res}
                 else:
-                    extra[name] = {v[key_name]: v for v inajson_res}
+                    extra[name] = {v[key_name]: v for v in json_res}
             if self._all_elements_url:
                 all_elements = {}
                 elements = self._maas.get(self._all_elements_url).read()
