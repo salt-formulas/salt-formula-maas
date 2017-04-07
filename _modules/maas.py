@@ -373,6 +373,8 @@ class Machine(MaasObject):
 
 
 class AssignMachinesIP(MaasObject):
+    READY = 4
+
     def __init__(self):
         super(AssignMachinesIP, self).__init__()
         self._all_elements_url = None
@@ -388,6 +390,8 @@ class AssignMachinesIP(MaasObject):
     def fill_data(self, name, data, machines):
         interface = data['interface']
         machine = machines[name]
+        if machine['status'] != self.READY:
+            raise Exception('Not in ready state')
         if 'ip' not in interface:
             return
         data = {
