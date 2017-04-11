@@ -632,7 +632,7 @@ class Domain(MaasObject):
 
 class MachinesStatus(MaasObject):
     @classmethod
-    def execute(cls):
+    def execute(cls, object_name=None):
         cls._maas = _create_maas_client()
         result = cls._maas.get(u'api/2.0/machines/')
         json_result = json.loads(result.read())
@@ -646,6 +646,8 @@ class MachinesStatus(MaasObject):
             (15, 'Failed disk erasing')])
         summary = collections.Counter()
         for machine in json_result:
+            if object_name is not None and machine['hostname'] != object_name:
+                continue
             status = status_name_dict[machine['status']]
             summary[status] += 1
             res.append({
