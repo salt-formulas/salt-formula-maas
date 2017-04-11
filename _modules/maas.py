@@ -88,7 +88,7 @@ class MaasObject(object):
             return self._maas.post(self._create_url.format(**data),
                                    None, **data).read()
 
-    def process(self):
+    def process(self, object_name=None):
         ret = {
             'success': [],
             'errors': {},
@@ -123,13 +123,14 @@ class MaasObject(object):
                         all_elements[element[self._element_key]] = element
             else:
                 all_elements = {}
-            for name, config_data in config.iteritems():
+
+            def process_single(name, config_data):
                 self._update = False
                 try:
                     data = self.fill_data(name, config_data, **extra)
                     if data is None:
                         ret['updated'].append(name)
-                        continue
+                        return
                     if name in all_elements:
                         self._update = True
                         data = self.update(data, all_elements[name])
@@ -145,6 +146,11 @@ class MaasObject(object):
                 except Exception as e:
                     LOG.exception('Failed for object %s reason %s', name, e)
                     ret['errors'][name] = str(e)
+            if object_name is not None:
+                process_single(object_name, config[object_name])
+            else:
+                for name, config_data in config.iteritems():
+                    process_single(name, config_data)
         except Exception as e:
             LOG.exception('Error Global')
             raise
@@ -670,20 +676,20 @@ def process_devices():
     return Device().process()
 
 
-def process_machines():
-    return Machine().process()
+def process_machines(*args):
+    return Machine().process(*args)
 
 
-def process_assign_machines_ip():
-    return AssignMachinesIP().process()
+def process_assign_machines_ip(*args):
+    return AssignMachinesIP().process(*args)
 
 
-def machines_status():
-    return MachinesStatus.execute()
+def machines_status(*args):
+    return MachinesStatus.execute(*args)
 
 
-def deploy_machines():
-    return DeployMachines().process()
+def deploy_machines(*args):
+    return DeployMachines().process(*args)
 
 
 def process_boot_resources():
