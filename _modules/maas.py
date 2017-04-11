@@ -412,8 +412,7 @@ class AssignMachinesIP(MaasObject):
         }
         if 'default_gateway' in interface:
             data['default_gateway'] = interface.get('gateway')
-        if self._update:
-            data['force'] = '1'
+        data['force'] = '1'
         data['system_id'] = str(machine['system_id'])
         data['interface_id'] = str(machine['interface_set'][0]['id'])
         return data
