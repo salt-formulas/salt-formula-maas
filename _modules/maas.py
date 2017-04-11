@@ -88,7 +88,7 @@ class MaasObject(object):
             return self._maas.post(self._create_url.format(**data),
                                    None, **data).read()
 
-    def process(self, object_name=None):
+    def process(self, objects_name=None):
         ret = {
             'success': [],
             'errors': {},
@@ -146,8 +146,13 @@ class MaasObject(object):
                 except Exception as e:
                     LOG.exception('Failed for object %s reason %s', name, e)
                     ret['errors'][name] = str(e)
-            if object_name is not None:
-                process_single(object_name, config[object_name])
+            if objects_name is not None:
+                if ',' in objects_name:
+                    objects_name = objects_name.split(',')
+                else:
+                    objects_name = [objects_name]
+                for object_name in objects_name:
+                    process_single(object_name, config[object_name])
             else:
                 for name, config_data in config.iteritems():
                     process_single(name, config_data)
@@ -632,7 +637,7 @@ class Domain(MaasObject):
 
 class MachinesStatus(MaasObject):
     @classmethod
-    def execute(cls, object_name=None):
+    def execute(cls, objects_name=None):
         cls._maas = _create_maas_client()
         result = cls._maas.get(u'api/2.0/machines/')
         json_result = json.loads(result.read())
@@ -645,8 +650,13 @@ class MachinesStatus(MaasObject):
             (13, 'Releasing failed'), (14, 'Disk erasing'),
             (15, 'Failed disk erasing')])
         summary = collections.Counter()
+        if objects_name:
+            if ',' in objects_name:
+                objects_name = set(objects_name.split(','))
+            else:
+                objects_name = set([objects_name])
         for machine in json_result:
-            if object_name is not None and machine['hostname'] != object_name:
+            if objects_name and machine['hostname'] not in objects_name:
                 continue
             status = status_name_dict[machine['status']]
             summary[status] += 1
