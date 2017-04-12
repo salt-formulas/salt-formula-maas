@@ -443,6 +443,12 @@ class DeployMachines(MaasObject):
             data['hwe_kernel'] = machine_data['hwe_kernel']
         return data
 
+    def send(self, data):
+        LOG.info('%s %s', self.__class__.__name__.lower(), _format_data(data))
+        self._maas.post('api/2.0/machines/', 'allocate', system_id=data['system_id']).read()
+
+        return self._maas.post(self._create_url[0].format(**data),
+                                *self._create_url[1:], **data).read()
 
 class BootResource(MaasObject):
     def __init__(self):
