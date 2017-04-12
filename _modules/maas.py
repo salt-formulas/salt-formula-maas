@@ -664,9 +664,9 @@ class MachinesStatus(MaasObject):
                 continue
             status = status_name_dict[machine['status']]
             summary[status] += 1
-            res.append('{}:{}:{}'.format(machine['hostname'],
-                                         machine['system_id'],
-                                         status))
+            res.append('hostname:{},system_id:{},status:{}'
+                       .format(machine['hostname'], machine['system_id'],
+                               status))
         return {'machines': res, 'summary': summary}
 
 
