@@ -141,10 +141,10 @@ class MaasObject(object):
                         ret['success'].append(name)
                 except urllib2.HTTPError as e:
                     etxt = e.read()
-                    LOG.exception('Failed for object %s reason %s', name, etxt)
+                    LOG.error('Failed for object %s reason %s', name, etxt)
                     ret['errors'][name] = str(etxt)
                 except Exception as e:
-                    LOG.exception('Failed for object %s reason %s', name, e)
+                    LOG.error('Failed for object %s reason %s', name, e)
                     ret['errors'][name] = str(e)
             if objects_name is not None:
                 if ',' in objects_name:
