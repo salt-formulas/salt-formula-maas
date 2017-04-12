@@ -445,8 +445,7 @@ class DeployMachines(MaasObject):
 
     def send(self, data):
         LOG.info('%s %s', self.__class__.__name__.lower(), _format_data(data))
-        self._maas.post('api/2.0/machines/', 'allocate', system_id=data['system_id']).read()
-
+        self._maas.post(u'api/2.0/machines/', 'allocate', system_id=data['system_id']).read()
         return self._maas.post(self._create_url[0].format(**data),
                                 *self._create_url[1:], **data).read()
 
