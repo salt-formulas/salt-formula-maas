@@ -437,7 +437,7 @@ class DeployMachines(MaasObject):
         data = {
             'system_id': machine['system_id'],
         }
-        if 'os' in machine_data:
+        if 'distro_series' in machine_data:
             data['distro_series'] = machine_data['distro_series']
         if 'hwe_kernel' in machine_data:
             data['hwe_kernel'] = machine_data['hwe_kernel']
