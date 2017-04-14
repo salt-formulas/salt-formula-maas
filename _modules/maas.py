@@ -686,8 +686,8 @@ def process_package_repositories():
     return PacketRepository().process()
 
 
-def process_devices():
-    return Device().process()
+def process_devices(*args):
+    return Device().process(*args)
 
 
 def process_machines(*args):
