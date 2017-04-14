@@ -85,8 +85,8 @@ class MaasObject(object):
         if isinstance(self._create_url, tuple):
             return self._maas.post(self._create_url[0].format(**data),
                                    *self._create_url[1:], **data).read()
-            return self._maas.post(self._create_url.format(**data),
-                                   None, **data).read()
+        return self._maas.post(self._create_url.format(**data),
+                                None, **data).read()
 
     def process(self, objects_name=None):
         ret = {
