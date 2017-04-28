@@ -70,7 +70,6 @@ Single MAAS region service [single UI/API]
                - trusty
           components:
               - main
-              - extra
           arches: amd64
           key: "-----BEGIN PGP PUBLIC KEY BLOCK-----
                Version: GnuPG v2
@@ -107,12 +106,14 @@ Single MAAS region service [single UI/API]
       machines:
         machine1:
           interfaces:
-            - one1: "11:22:33:44:55:66"
+            mac: "11:22:33:44:55:66"
           power_parameters:
             power_type: ipmi
             power_address: '192.168.10.10'
             power_user: bmc_user
             power_password: bmc_password
+          distro_series: xenial
+          hwe_kernel: hwe-16.04
       devices:
         machine1-ipmi:
           interface:
