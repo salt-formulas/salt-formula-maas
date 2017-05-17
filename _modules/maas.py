@@ -31,7 +31,8 @@ try:
     from maas_client import MAASClient, MAASDispatcher, MAASOAuth
     HAS_MASS = True
 except ImportError:
-    LOG.exception('why??')
+    LOG.debug('Missing python-oauth module. Skipping')
+    pass
 
 
 def __virtual__():
