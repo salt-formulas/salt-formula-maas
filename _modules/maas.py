@@ -365,6 +365,8 @@ class Machine(MaasObject):
             'power_type': machine_data.get('power_type', 'ipmi'),
             'power_parameters_power_address': power_data['power_address'],
         }
+        if 'power_driver' in power_data:
+            data['power_parameters_power_driver'] = power_data['power_driver']
         if 'power_user' in power_data:
             data['power_parameters_power_user'] = power_data['power_user']
         if 'power_password' in power_data:

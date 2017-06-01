@@ -112,6 +112,8 @@ Single MAAS region service [single UI/API]
             power_address: '192.168.10.10'
             power_user: bmc_user
             power_password: bmc_password
+            #Optional (for legacy HW)
+            power_driver: LAN
           distro_series: xenial
           hwe_kernel: hwe-16.04
       devices:
