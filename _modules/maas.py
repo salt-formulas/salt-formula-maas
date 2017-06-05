@@ -32,7 +32,6 @@ try:
     HAS_MASS = True
 except ImportError:
     LOG.debug('Missing python-oauth module. Skipping')
-    pass
 
 
 def __virtual__():
