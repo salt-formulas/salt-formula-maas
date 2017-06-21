@@ -47,6 +47,13 @@ maas_cluster_packages:
   - require:
     - pkg: maas_cluster_packages
 
+# salt.states.file.line doesn't support setting owner/group in Salt version 2016.3.6
+# Starting from version 2016.11.0 we may remove code below and set owner/group in file.line
+/etc/maas/rackd_conf:
+  file.managed:
+  - name: /etc/maas/rackd.conf
+  - group: maas
+
 maas_cluster_services:
   service.running:
   - enable: true

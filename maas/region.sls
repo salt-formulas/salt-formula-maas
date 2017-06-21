@@ -9,6 +9,7 @@ maas_region_packages:
   file.managed:
   - source: salt://maas/files/regiond.conf
   - template: jinja
+  - group: maas
   - require:
     - pkg: maas_region_packages
 
