@@ -387,6 +387,7 @@ class Machine(MaasObject):
 
 class AssignMachinesIP(MaasObject):
     READY = 4
+    DEPLOYED = 6
 
     def __init__(self):
         super(AssignMachinesIP, self).__init__()
@@ -403,6 +404,8 @@ class AssignMachinesIP(MaasObject):
     def fill_data(self, name, data, machines):
         interface = data['interface']
         machine = machines[name]
+        if machine['status'] == self.DEPLOYED:
+            return
         if machine['status'] != self.READY:
             raise Exception('Not in ready state')
         if 'ip' not in interface:
@@ -422,6 +425,7 @@ class AssignMachinesIP(MaasObject):
 
 class DeployMachines(MaasObject):
     READY = 4
+    DEPLOYED = 6
 
     def __init__(self):
         super(DeployMachines, self).__init__()
@@ -434,6 +438,8 @@ class DeployMachines(MaasObject):
 
     def fill_data(self, name, machine_data, machines):
         machine = machines[name]
+        if machine['status'] == self.DEPLOYED:
+            return
         if machine['status'] != self.READY:
             raise Exception('Not in ready state')
         data = {
