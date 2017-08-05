@@ -97,6 +97,18 @@ maas_apache_headers:
   - require:
     - pkg: maas_region_packages
 
+/etc/maas/preseeds/curtin_userdata_arm64_generic_xenial:
+  file.managed:
+  - source: salt://maas/files/curtin_userdata_arm64_generic_xenial
+  - template: jinja
+  - user: root
+  - group: root
+  - mode: 644
+  - context:
+      salt_master_ip: {{ region.salt_master_ip }}
+  - require:
+    - pkg: maas_region_packages
+
 /root/.pgpass:
   file.managed:
   - source: salt://maas/files/pgpass
