@@ -13,6 +13,13 @@ maas_region_packages:
   - require:
     - pkg: maas_region_packages
 
+/usr/lib/python3/dist-packages/provisioningserver/templates/proxy/maas-proxy.conf.template:
+  file.managed:
+  - source: salt://maas/files/maas-proxy.conf.template
+  - template: jinja
+  - require:
+    - pkg: maas_region_packages
+
 {%- if region.get('enable_iframe', False)  %}
 
 /etc/apache2/conf-enabled/maas-http.conf:

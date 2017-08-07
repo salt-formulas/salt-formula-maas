@@ -23,6 +23,9 @@ Single MAAS region service [single UI/API]
   maas:
     salt_master_ip: 192.168.0.10
     region:
+      upstream_proxy:
+        address: 10.0.0.1
+        port: 8080
       theme: mirantis
       bind:
         host: 192.168.0.10:5240
