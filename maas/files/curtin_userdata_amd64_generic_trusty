@@ -1,4 +1,4 @@
-{%- from "maas/map.jinja" import server with context %}
+{%- from "maas/map.jinja" import cluster with context %}
 {% raw %}
 #cloud-config
 debconf_selections:
@@ -17,8 +17,13 @@ early_commands:
 {{endif}}
 late_commands:
   maas: [wget, '--no-proxy', {{node_disable_pxe_url|escape.json}}, '--post-data', {{node_disable_pxe_data|escape.json}}, '-O', '/dev/null']
-  apt_00_set_repo: ["curtin", "in-target", "--", "sh", "-c", "echo 'deb [arch=amd64] http://repo.saltstack.com/apt/ubuntu/14.04/amd64/2016.3/ trusty main' >> /etc/apt/sources.list"]
-  apt_01_set_gpg: ["curtin", "in-target", "--", "sh", "-c", "echo 'LS0tLS1CRUdJTiBQR1AgUFVCTElDIEtFWSBCTE9DSy0tLS0tClZlcnNpb246IEdudVBHIHYyCgptUUVOQkZPcHZwZ0JDQURrUDY1Nkg0MWk4ZnBwbEVFQjhJZUxodWd5QzJyVEV3d1NjbGI4dFFOWXRVaUdkbmE5Cm0zOGtiME9TMkREckVkdGRRYjJoV0Nuc3d4YUFrVXVuYjJxcTE4dmQzZEJ2bG5JK0M0L3h1NWtzWlprUmorZlcKdEFyTlIxOFYrMmprd2NHMjZtOEF4SXJUK200TTYvYmduU2ZIVEJ0VDVhZE5mVmNUSHFpVDFKdENiUWNYbXdWdwpXYnFTNnYvTGhjc0JFLy9TSG5lNHVCQ0svR0h4WkhoUTVqejVoKzN2V2VWNGd2eFMzWHU2djFJbElwTER3VXRzCmtUMUR1bWZ5bllublptV1RHYzZTWXlJRlhUUEpMdG5vV0RiOU9CZFdnWnhYZkhFY0JzS0doYStiWE8rbTJ0SEEKZ05uZU45aTVmOG9OeG81bmpyTDhqa0Nja09wTnBuZzE4QktYQUJFQkFBRzBNbE5oYkhSVGRHRmpheUJRWVdOcgpZV2RwYm1jZ1ZHVmhiU0E4Y0dGamEyRm5hVzVuUUhOaGJIUnpkR0ZqYXk1amIyMCtpUUU0QkJNQkFnQWlCUUpUCnFiNllBaHNEQmdzSkNBY0RBZ1lWQ0FJSkNnc0VGZ0lEQVFJZUFRSVhnQUFLQ1JBT0NLRkozbGUvdmhrcUIvMFEKV3pFTFpmNGQ4N1dBcHpvbExHK3pwc0pLdHQvdWVYTDFXMUtBN0pJTGhYQjF1eXZWT1J0OHVBOUZqbUUwODNvMQp5RTY2d0N5YTdWOGhqTm4ybGtMWGJvT1VkMVVURXJsUmcxR1liSXQrK1ZQc2NUeEh4d3BqREd4REIxL2ZpWDJvCm5LNVNFcHVqNEllSVBKVkUvdUxOQXdaeWZYOERBckxWSjVoOGxrbndpSGxRTEdsbk91OXVsRUFlandBS3Q5Q1UKNG9ZVHN6WU00eHJidGpCL2ZSK21QblloMmZCb1FPNGQvTlFpZWpJRXlkOUlFRU1kLzAzQUpRQnVNdXg2MnRqQQovTnd2UTllcU5nTHc5TmlzRk5IUld0UDRqaEFPc3NodjFXVyt6UHp1M296b08rbExIaXhVSXo3ZnFSazM4cThRCjlvTlIzMUt2cmtTTnJGYkEzRDg5dVFFTkJGT3B2cGdCQ0FESjc5aUgxMEFmQWZwVEJFUXdhNnZ6VUkzRWx0cWIKOWFaMHhiWlY4Vi84cG51VTdycU03WituSmdsZGliRms0Z0ZHMmJIQ0cxQzVhRUgvRm1jT012VEtEaEpTRlFVeAp1aGd4dHRNQXJYbTJjMjJPU3kxaHBzblZHNjhHMzJOYWcvUUZFSisrM2hObmJ5R1pwSG5QaVlnZWozRnJlclFKCnp2NDU2d0lzeFJETXZKMU5aUUIzdHdvQ3F3YXBDNkZKRTJodWtTZFdCNXlDWXBXbFpKWEJLemxZei9nd0QvRnIKR0w1NzhXckxoS3czVXZuSm1scHFRYURLd21WMnM3TXNvWm9nQzZ3a0hFOTJrR1BHMkdtb1JEM0FMam1Ddk4xRQpQc0lzUUdud3BjWHNScFlWQ29XN2Uyblc0d1VmN0lrRlo5NHlPQ21VcTZXcmVXSTROZ2dSY0ZDNUFCRUJBQUdKCkFSOEVHQUVDQUFrRkFsT3B2cGdDR3d3QUNna1FEZ2loU2Q1WHY3NC9OZ2dBMDhrRWRCa2lXV3dKWlVaRXk3Y0sKV1djZ2puUnVPSGQ0clBlVCt2UWJPV0d1Nng0Ynh1VmY5YVRpWWtmN1pqVkYybFBuOTdFWE9FR0ZXUFplWmJINAp2ZFJGSDlqTXRQK3JyTHQ2KzNjOWowTThTSUpZd0JMMStDTnBFQy9CdUhqL1JhL2Ntbkc1Wk5oWWVibTc2aDVmClQ5aVBXOWZGd3czNkZ6RmthNFZQbHZBNG9CN2ViQnRxdUZnM3NkUU5VL01tVFZWNGpQRldYeGg0b1JERFIrOE4KMWJjUG5iQjExYjVhcnk5OUYvbXFyN1JnUStZRkYwdUtSRTNTS2E3YSs2Y0l1SEVaN1phK3poUGFRbHpBT1pseApmdUJtU2N1bTh1UVRyRUY1K1VtNXprd0M3RVhUZEgxY28vKy9WL2ZwT3R4SWc0WE80a2N1Z1plZlZtNUVSZlZTCk1BPT0KPWR0TU4KLS0tLS1FTkQgUEdQIFBVQkxJQyBLRVkgQkxPQ0stLS0tLQo='|base64 -d|apt-key add -"]
+{% endraw %}
+{%- if not cluster.saltstack_repo_key == 'none' %}
+{% set salt_repo_key = salt['hashutil.base64_b64encode'](cluster.saltstack_repo_key) %}
+  apt_00_set_gpg: ["curtin", "in-target", "--", "sh", "-c", "echo '{{salt_repo_key}}' | base64 -d | apt-key add -"]
+{%- endif %}
+  apt_01_set_repo: ["curtin", "in-target", "--", "sh", "-c", "echo 'deb [arch=amd64] {{ cluster.saltstack_repo_trusty }}' >> /etc/apt/sources.list"]
+{% raw %}
   apt_03_update: ["curtin", "in-target", "--", "apt-get", "update"]
   salt_01_install: ["curtin", "in-target", "--", "apt-get", "-y", "install", "salt-minion"]
 {% endraw %}
