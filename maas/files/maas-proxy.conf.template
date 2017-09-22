@@ -62,6 +62,8 @@ cache_store_log /var/log/maas/proxy/store.log
 {{endif}}
 {% endraw %}
 {% if region.upstream_proxy is defined %}
-cache_peer {{ region.upstream_proxy.address }} parent {{ region.upstream_proxy.port }} 0 no-query default
+cache_peer {{ region.upstream_proxy.address }} parent {{ region.upstream_proxy.port }} 0 no-query default {% if region.upstream_proxy.user is defined -%}
+login={{ region.upstream_proxy.user }}:{{ region.upstream_proxy.password }}
+{%- endif %}
 never_direct allow all
 {%- endif %}

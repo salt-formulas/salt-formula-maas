@@ -26,6 +26,8 @@ Single MAAS region service [single UI/API]
       upstream_proxy:
         address: 10.0.0.1
         port: 8080
+        user: username      #OPTIONAL
+        password: password  #OPTIONAL
       theme: mirantis
       bind:
         host: 192.168.0.10:5240
