@@ -13,15 +13,15 @@ Module for handling maas calls.
 
 from __future__ import absolute_import
 
-import io
-import logging
 import collections
-import os.path
-import subprocess
-import urllib2
+import copy
 import hashlib
-
+import io
 import json
+import logging
+import os.path
+import time
+import urllib2
 
 LOG = logging.getLogger(__name__)
 
@@ -45,6 +45,14 @@ def __virtual__():
 
 
 APIKEY_FILE = '/var/lib/maas/.maas_credentials'
+
+STATUS_NAME_DICT = dict([
+    (0, 'New'), (1, 'Commissioning'), (2, 'Failed commissioning'),
+    (3, 'Missing'), (4, 'Ready'), (5, 'Reserved'), (10, 'Allocated'),
+    (9, 'Deploying'), (6, 'Deployed'), (7, 'Retired'), (8, 'Broken'),
+    (11, 'Failed deployment'), (12, 'Releasing'),
+    (13, 'Releasing failed'), (14, 'Disk erasing'),
+    (15, 'Failed disk erasing')])
 
 
 def _format_data(data):
@@ -407,7 +415,7 @@ class AssignMachinesIP(MaasObject):
         if machine['status'] == self.DEPLOYED:
             return
         if machine['status'] != self.READY:
-            raise Exception('Not in ready state')
+            raise Exception('Machine:{} not in READY state'.format(name))
         if 'ip' not in interface:
             return
         data = {
@@ -424,6 +432,7 @@ class AssignMachinesIP(MaasObject):
 
 
 class DeployMachines(MaasObject):
+    # FIXME
     READY = 4
     DEPLOYED = 6
 
@@ -654,13 +663,6 @@ class MachinesStatus(MaasObject):
         result = cls._maas.get(u'api/2.0/machines/')
         json_result = json.loads(result.read())
         res = []
-        status_name_dict = dict([
-            (0, 'New'), (1, 'Commissioning'), (2, 'Failed commissioning'),
-            (3, 'Missing'), (4, 'Ready'), (5, 'Reserved'), (10, 'Allocated'),
-            (9, 'Deploying'), (6, 'Deployed'), (7, 'Retired'), (8, 'Broken'),
-            (11, 'Failed deployment'), (12, 'Releasing'),
-            (13, 'Releasing failed'), (14, 'Disk erasing'),
-            (15, 'Failed disk erasing')])
         summary = collections.Counter()
         if objects_name:
             if ',' in objects_name:
@@ -670,12 +672,73 @@ class MachinesStatus(MaasObject):
         for machine in json_result:
             if objects_name and machine['hostname'] not in objects_name:
                 continue
-            status = status_name_dict[machine['status']]
+            status = STATUS_NAME_DICT[machine['status'].lower()]
             summary[status] += 1
-            res.append('hostname:{},system_id:{},status:{}'
-                       .format(machine['hostname'], machine['system_id'],
-                               status))
+            res.append(
+                {'hostname': machine['hostname'],
+                 'system_id': machine['system_id'],
+                 'status': status})
         return {'machines': res, 'summary': summary}
+
+    @classmethod
+    def wait_for_machine_status(cls, **kwargs):
+        """
+        A function that wait for any requested status, for any set of maas
+        machines.
+
+        If no kwargs has been passed - will try to wait ALL
+        defined in salt::maas::region::machines
+
+        See readme file for more examples.
+        CLI Example:
+        .. code-block:: bash
+
+            salt-call state.apply maas.machines.wait_for_deployed
+
+        :param kwargs:
+            timeout:    in s; Global timeout for wait
+            poll_time:  in s;Sleep time, between retry
+            req_status: string; Polling status
+            machines:   list; machine names
+            ignore_machines: list; machine names
+        :ret: True
+                 Exception - if something fail/timeout reached
+        """
+        timeout = kwargs.get("timeout", 60 * 120)
+        poll_time = kwargs.get("poll_time", 30)
+        req_status = kwargs.get("req_status", "Ready")
+        to_discover = kwargs.get("machines", None)
+        ignore_machines = kwargs.get("ignore_machines", None)
+        if not to_discover:
+            try:
+                to_discover = __salt__['config.get']('maas')['region'][
+                    'machines'].keys()
+            except KeyError:
+                LOG.warning("No defined machines!")
+                return True
+        total = copy.deepcopy(to_discover) or []
+        if ignore_machines and total:
+            total = [x for x in to_discover if x not in ignore_machines]
+        started_at = time.time()
+        while len(total) <= len(to_discover):
+            for m in to_discover:
+                for discovered in MachinesStatus.execute()['machines']:
+                    if m == discovered['hostname'] and \
+                                    discovered['status'] == req_status.lower():
+                        if m in total: total.remove(m)
+            if len(total) <= 0:
+                LOG.debug(
+                    "Machines:{} are:{}".format(to_discover, req_status))
+                return True
+            if (timeout - (time.time() - started_at)) <= 0:
+                raise Exception(
+                    'Machines:{}not in {} state'.format(total, req_status))
+            LOG.info(
+                "Waiting status:{} "
+                "for machines:{}"
+                "\nsleep for:{}s "
+                "Timeout:{}s".format(req_status, total, poll_time, timeout))
+            time.sleep(poll_time)
 
 
 def process_fabrics():
@@ -732,3 +795,7 @@ def process_domain():
 
 def process_sshprefs():
     return SSHPrefs().process()
+
+
+def wait_for_machine_status(**kwargs):
+    return MachinesStatus.wait_for_machine_status(**kwargs)
