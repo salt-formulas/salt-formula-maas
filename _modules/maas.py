@@ -97,6 +97,9 @@ class MaasObject(object):
                                 None, **data).read()
 
     def process(self, objects_name=None):
+        # FIXME: probably, should be extended with "skipped" return.
+        # For example, currently "DEPLOYED" nodes are skipped, and no changes
+        # applied - but they fall into 'updated' list.
         ret = {
             'success': [],
             'errors': {},
@@ -148,6 +151,8 @@ class MaasObject(object):
                         self.send(data)
                         ret['success'].append(name)
                 except urllib2.HTTPError as e:
+                    # FIXME add exception's for response:
+                    # '{"mode": ["Interface is already set to DHCP."]}
                     etxt = e.read()
                     LOG.error('Failed for object %s reason %s', name, etxt)
                     ret['errors'][name] = str(etxt)
@@ -365,10 +370,19 @@ class Machine(MaasObject):
 
     def fill_data(self, name, machine_data):
         power_data = machine_data['power_parameters']
+        machine_pxe_mac = machine_data.get('pxe_interface_mac', None)
+        if machine_data.get("interface", None):
+            LOG.warning(
+                "Old machine-describe detected! "
+                "Please read documentation for "
+                "'salt-formulas/maas' for migration!")
+            machine_pxe_mac = machine_data['interface'].get('mac', None)
+        if not machine_pxe_mac:
+            raise Exception("PXE MAC for machine:{} not defined".format(name))
         data = {
             'hostname': name,
             'architecture': machine_data.get('architecture', 'amd64/generic'),
-            'mac_addresses': machine_data['interface']['mac'],
+            'mac_addresses': machine_pxe_mac,
             'power_type': machine_data.get('power_type', 'ipmi'),
             'power_parameters_power_address': power_data['power_address'],
         }
@@ -396,6 +410,7 @@ class Machine(MaasObject):
 
 
 class AssignMachinesIP(MaasObject):
+    # FIXME
     READY = 4
     DEPLOYED = 6
 
@@ -411,26 +426,152 @@ class AssignMachinesIP(MaasObject):
         self._extra_data_urls = {'machines': (u'api/2.0/machines/',
                                               None, 'hostname')}
 
-    def fill_data(self, name, data, machines):
-        interface = data['interface']
-        machine = machines[name]
-        if machine['status'] == self.DEPLOYED:
-            return
-        if machine['status'] != self.READY:
-            raise Exception('Machine:{} not in READY state'.format(name))
-        if 'ip' not in interface:
-            return
+    def _data_old(self, _interface, _machine):
+        """
+        _interface = {
+            "mac": "11:22:33:44:55:77",
+            "mode": "STATIC",
+            "ip": "2.2.3.15",
+            "subnet": "subnet1",
+            "gateway": "2.2.3.2",
+        }
+        :param data:
+        :return:
+        """
         data = {
             'mode': 'STATIC',
-            'subnet': str(interface.get('subnet')),
-            'ip_address': str(interface.get('ip')),
+            'subnet': str(_interface.get('subnet')),
+            'ip_address': str(_interface.get('ip')),
         }
-        if 'default_gateway' in interface:
-            data['default_gateway'] = interface.get('gateway')
+        if 'gateway' in _interface:
+            data['default_gateway'] = _interface.get('gateway')
         data['force'] = '1'
-        data['system_id'] = str(machine['system_id'])
-        data['interface_id'] = str(machine['interface_set'][0]['id'])
+        data['system_id'] = str(_machine['system_id'])
+        data['interface_id'] = str(_machine['interface_set'][0]['id'])
         return data
+
+    def _get_nic_id_by_mac(self, machine, req_mac=None):
+        data = {}
+        for nic in machine['interface_set']:
+            data[nic['mac_address']] = nic['id']
+        if req_mac:
+            if req_mac in data.keys():
+                return data[req_mac]
+            else:
+                raise Exception('NIC with mac:{} not found at '
+                                'node:{}'.format(req_mac, machine['fqdn']))
+        return data
+
+    def _disconnect_all_nic(self, machine):
+        """
+            Maas will fail, in case same config's will be to apply
+            on different interfaces. In same time - not possible to push
+            whole network schema at once. Before configuring - need to clean-up
+            everything
+        :param machine:
+        :return:
+        """
+        for nic in machine['interface_set']:
+            LOG.debug("Disconnecting interface:{}".format(nic['mac_address']))
+            try:
+                self._maas.post(
+                    u'/api/2.0/nodes/{}/interfaces/{}/'.format(
+                        machine['system_id'], nic['id']), 'disconnect')
+            except Exception as e:
+                LOG.error("Failed to disconnect interface:{} on node:{}".format(
+                    nic['mac_address'], machine['fqdn']))
+                raise Exception(str(e))
+
+    def _process_interface(self, nic_data,  machine):
+        """
+            Process exactly one interface:
+                - update interface
+                - link to network
+            These functions are self-complementary, and do not require an
+            external "process" method. Those broke old-MaasObject logic,
+            though make functions more simple in case iterable tasks.
+        """
+        nic_id = self._get_nic_id_by_mac(machine, nic_data['mac'])
+
+        # Process op=link_subnet
+        link_data = {}
+        _mode = nic_data.get('mode', 'AUTO').upper()
+        if _mode == 'STATIC':
+            link_data = {
+                'mode': 'STATIC',
+                'subnet': str(nic_data.get('subnet')),
+                'ip_address': str(nic_data.get('ip')),
+                'default_gateway': str(nic_data.get('gateway', "")),
+            }
+        elif _mode == 'DHCP':
+            link_data = {
+                'mode': 'DHCP',
+                'subnet': str(nic_data.get('subnet')),
+            }
+        elif _mode == 'AUTO':
+            link_data = {'mode': 'AUTO',
+                         'default_gateway': str(nic_data.get('gateway', "")), }
+        elif _mode in ('LINK_UP', 'UNCONFIGURED'):
+            link_data = {'mode': 'LINK_UP'}
+        else:
+            raise Exception('Wrong IP mode:{}'
+                            ' for node:{}'.format(_mode, machine['fqdn']))
+        link_data['force'] = str(1)
+
+        physical_data = {"name": nic_data.get("name", ""),
+                         "tags": nic_data.get('tags', ""),
+                         "vlan": nic_data.get('vlan', "")}
+
+        try:
+            # Cleanup-old definition
+            LOG.debug("Processing {}:{},{}".format(nic_data['mac'], link_data,
+                                                   physical_data))
+            # "link_subnet" and "fill all other data" - its 2 different
+            # operations. So, first we update NIC:
+            self._maas.put(
+                u'/api/2.0/nodes/{}/interfaces/{}/'.format(machine['system_id'],
+                                                           nic_id),
+                **physical_data)
+            # And then, link subnet configuration:
+            self._maas.post(
+                u'/api/2.0/nodes/{}/interfaces/{}/'.format(machine['system_id'],
+                                                           nic_id),
+                'link_subnet', **link_data)
+        except Exception as e:
+            LOG.error("Failed to process interface:{} on node:{}".format(
+                nic_data['mac'], machine['fqdn']))
+            raise Exception(str(e))
+
+    def fill_data(self, name, data, machines):
+        machine = machines[name]
+        if machine['status'] == self.DEPLOYED:
+            LOG.debug("Skipping node:{} "
+                      "since it in status:DEPLOYED".format(name))
+            return
+        if machine['status'] != self.READY:
+            raise Exception('Machine:{} not in status:READY'.format(name))
+        # backward comparability, for old schema
+        if data.get("interface", None):
+            if 'ip' not in data["interface"]:
+                LOG.info("No IP NIC definition for:{}".format(name))
+                return
+            LOG.warning(
+                "Old machine-describe detected! "
+                "Please read documentation "
+                "'salt-formulas/maas' for migration!")
+            return self._data_old(data['interface'], machines[name])
+        # NewSchema processing:
+        # Warning: old-style MaasObject.process still be called, but
+        # with empty data for process.
+        interfaces = data.get('interfaces', {})
+        if len(interfaces.keys()) == 0:
+            LOG.info("No IP NIC definition for:{}".format(name))
+            return
+        LOG.info('%s for %s', self.__class__.__name__.lower(),
+                 machine['fqdn'])
+        self._disconnect_all_nic(machine)
+        for key, value in sorted(interfaces.iteritems()):
+            self._process_interface(value, machine)
 
 
 class DeployMachines(MaasObject):
@@ -770,6 +911,10 @@ def process_machines(*args):
 
 
 def process_assign_machines_ip(*args):
+    """
+    Manage interface configurations.
+    See readme.rst for more info
+    """
     return AssignMachinesIP().process(*args)
 
 
