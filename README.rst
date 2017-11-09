@@ -151,9 +151,11 @@ Single MAAS region service [single UI/API]
         - 'ssh-rsa ASDFOSADFISdfasdfasjdklfjasdJFASDJfASdf923@AAAAB3NzaC1yc2EAAAADAQABAAACAQCv8ISOESGgYUOycYw1SAs/SfHTqtSCTephD/7o2+mEZO53xN98sChiFscFaPA2ZSMoZbJ6MQLKcWKMK2OaTdNSAvn4UE4T6VP0ccdumHDNRwO3f6LptvXr9NR5Wocz2KAgptk+uaA8ytM0Aj9NT0UlfjAXkKnoKyNq6yG+lx4HpwolVaFSlqRXf/iuHpCrspv/u1NW7ReMElJoXv+0zZ7Ow0ZylISdYkaqbV8QatCb17v1+xX03xLsZigfugce/8CDsibSYvJv+Hli5CCBsKgfFqLy4R5vGxiLSVzG/asdjalskjdlkasjdasd/asdajsdkjalaksdjfasd/fa/sdf/asd/fas/dfsadf blah@blah'
 
 
+
 Usage of local repos
 
 .. code-block:: yaml
+
   maas:
     cluster:
       enabled: true
@@ -203,6 +205,60 @@ Single MAAS cluster service [multiple racks]
       cluster:
         enabled: true
         role: master/slave
+
+.. code-block:: yaml
+
+    maas:
+      cluster:
+        enabled: true
+        role: master/slave
+
+Module function's example:
+==========================
+
+* Wait for status of selected machine's:
+
+.. code-block:: bash
+
+    > cat maas/machines/wait_for_machines_ready.sls
+
+    ...
+
+    wait_for_machines_ready:
+      module.run:
+      - name: maas.wait_for_machine_status
+      - kwargs:
+            machines:
+              - kvm01
+              - kvm02
+            timeout: 1200 # in seconds
+            req_status: "Ready"
+      - require:
+        - cmd: maas_login_admin
+      ...
+
+If module run w/\o any extra paremeters - `wait_for_machines_ready` will wait for defined in salt machines. In those case, will be usefull to skip some machines:
+
+.. code-block:: bash
+
+    > cat maas/machines/wait_for_machines_deployed.sls
+
+    ...
+
+    wait_for_machines_ready:
+      module.run:
+      - name: maas.wait_for_machine_status
+      - kwargs:
+            timeout: 1200 # in seconds
+            req_status: "deployed"
+            ignore_machines:
+               - kvm01 # in case it's broken or whatever
+      - require:
+        - cmd: maas_login_admin
+      ...
+
+List of avaibled `req_status` defined in global variable:
+
 
 Read more
 =========
