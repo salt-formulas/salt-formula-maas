@@ -371,6 +371,8 @@ class Machine(MaasObject):
         if 'power_password' in power_data:
             data['power_parameters_power_pass'] = \
                 power_data['power_password']
+        if 'power_id' in power_data:
+            data['power_parameters_power_id'] = power_data['power_id']
         return data
 
     def update(self, new, old):
