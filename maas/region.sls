@@ -78,6 +78,14 @@ maas_apache_headers:
   - require:
     - pkg: maas_region_packages
 
+/root/.pgpass:
+  file.managed:
+  - source: salt://maas/files/pgpass
+  - template: jinja
+  - user: root
+  - group: root
+  - mode: 600
+
 maas_region_services:
   service.running:
   - enable: true
