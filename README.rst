@@ -250,7 +250,7 @@ If module run w/\o any extra paremeters - `wait_for_machines_ready` will wait fo
       - name: maas.wait_for_machine_status
       - kwargs:
             timeout: 1200 # in seconds
-            req_status: "deployed"
+            req_status: "Deployed"
             ignore_machines:
                - kvm01 # in case it's broken or whatever
       - require:

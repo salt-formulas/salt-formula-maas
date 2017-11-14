@@ -672,7 +672,7 @@ class MachinesStatus(MaasObject):
         for machine in json_result:
             if objects_name and machine['hostname'] not in objects_name:
                 continue
-            status = STATUS_NAME_DICT[machine['status'].lower()]
+            status = STATUS_NAME_DICT[machine['status']]
             summary[status] += 1
             res.append(
                 {'hostname': machine['hostname'],
@@ -724,8 +724,10 @@ class MachinesStatus(MaasObject):
             for m in to_discover:
                 for discovered in MachinesStatus.execute()['machines']:
                     if m == discovered['hostname'] and \
-                                    discovered['status'] == req_status.lower():
-                        if m in total: total.remove(m)
+                            discovered['status'].lower() == req_status.lower():
+                        if m in total:
+                            total.remove(m)
+
             if len(total) <= 0:
                 LOG.debug(
                     "Machines:{} are:{}".format(to_discover, req_status))
