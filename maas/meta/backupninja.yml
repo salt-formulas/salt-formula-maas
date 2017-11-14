@@ -1,0 +1,8 @@
+backup:
+  maas:
+    fs_includes:
+    - /etc/maas
+    - /var/lib/maas
+    - /var/backups/postgresql
+    fs_excludes:
+    - /var/lib/maas/boot-resources
