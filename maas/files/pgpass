@@ -1,0 +1,2 @@
+{%- from "maas/map.jinja" import region with context %}
+{{ region.database.host }}:5432:{{ region.database.name }}:{{ region.database.username }}:{{ region.database.password }}
