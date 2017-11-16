@@ -119,49 +119,81 @@ maas_config:
   - require:
     - cmd: maas_login_admin
 
+{%- if region.get('commissioning_scripts', False)  %}
+/etc/maas/files/commisioning_scripts/:
+  file.directory:
+  - user: root
+  - group: root
+  - mode: 755
+  - makedirs: true
+  - require:
+    - pkg: maas_region_packages
+
+/etc/maas/files/commisioning_scripts/00-maas-05-simplify-network-interfaces:
+  file.managed:
+  - source: salt://maas/files/commisioning_scripts/00-maas-05-simplify-network-interfaces
+  - mode: 755
+  - user: root
+  - group: root
+  - require:
+    - file: /etc/maas/files/commisioning_scripts/
+
 maas_commissioning_scripts:
   module.run:
   - name: maas.process_commissioning_scripts
   - require:
     - module: maas_config
+{%- endif %}
 
+{%- if region.get('fabrics', False)  %}
 maas_fabrics:
   module.run:
   - name: maas.process_fabrics
   - require:
     - module: maas_config
+{%- endif %}
 
+{%- if region.get('subnets', False)  %}
 maas_subnets:
   module.run:
   - name: maas.process_subnets
   - require:
     - module: maas_config
     - module: maas_fabrics
+{%- endif %}
 
+{%- if region.get('devices', False)  %}
 maas_devices:
   module.run:
   - name: maas.process_devices
   - require:
     - module: maas_config
     - module: maas_subnets
+{%- endif %}
 
+{%- if region.get('dhcp_snippets', False)  %}
 maas_dhcp_snippets:
   module.run:
   - name: maas.process_dhcp_snippets
   - require:
     - module: maas_config
+{%- endif %}
 
+{%- if region.get('package_repositories', False)  %}
 maas_package_repositories:
   module.run:
   - name: maas.process_package_repositories
   - require:
     - module: maas_config
+{%- endif %}
 
+{%- if region.get('boot_resources', False)  %}
 maas_boot_resources:
   module.run:
   - name: maas.process_boot_resources
   - require:
     - module: maas_config
+{%- endif %}
 
 maas_domain:
   module.run:
@@ -169,10 +201,12 @@ maas_domain:
   - require:
     - module: maas_config
 
+{%- if region.get('sshprefs', False)  %}
 maas_sshprefs:
   module.run:
   - name: maas.process_sshprefs
   - require:
     - module: maas_config
+{%- endif %}
 
 {%- endif %}
