@@ -110,7 +110,7 @@ Single MAAS region service [single UI/API]
           enabled: true
       machines:
         machine1:
-          interfaces:
+          interface:
             mac: "11:22:33:44:55:66"
           power_parameters:
             power_type: ipmi
@@ -119,6 +119,8 @@ Single MAAS region service [single UI/API]
             power_password: bmc_password
             #Optional (for legacy HW)
             power_driver: LAN
+            # Used in case of power_type: virsh
+            power_id: my_libvirt_vm_name
           distro_series: xenial
           hwe_kernel: hwe-16.04
       devices:
