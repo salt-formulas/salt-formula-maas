@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# Those script exchange default maas commissioning logic:
+# and report interface names in different way.
+# Initial logic stored in:
+# /usr/lib/python3/dist-packages/provisioningserver/refresh/node_info_scripts.py
+# IPADDR_SCRIPT variable.
+
+function process_ipaddr(){
+i=1
+j=1
+
+ethernets=$(ip -o l | grep -E '^[0-9]+:\ .*link/ether.*' | awk -F":" '/,/{gsub(/ /, "", $0); print $2}' | grep -Ev "br|bond")
+
+declare -A interfaces
+for iface in ${ethernets[@]}; do
+  speed=`ethtool $iface | grep '40000'`
+  if [[ "$?" == 0 ]]; then
+    interfaces[$iface]="fourty$i"
+    ((i++))
+  else
+    speed=`ethtool $iface | grep '10000' `
+    if [[ "$?" == 0 ]]; then
+      interfaces[$iface]="ten$i"
+      ((i++))
+    else
+      interfaces[$iface]="one$j"
+      ((j++))
+    fi
+  fi
+done
+
+for i in ${!interfaces[@]}; do
+  sedline+="-e s/${i}/${interfaces[$i]}/ "
+done
+
+ip addr | sed ${sedline}
+}
+
+if [[ "$(basename $0)" != "99-maas-03-network-interfaces" ]]; then
+  SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
+  echo "Apply 00-maas-05-simplify-network-interfaces modificathion:"
+  cp -v $0  ${SCRIPTPATH}/99-maas-03-network-interfaces
+  chmod 0755 ${SCRIPTPATH}/99-maas-03-network-interfaces
+else
+  process_ipaddr
+fi

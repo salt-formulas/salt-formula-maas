@@ -130,7 +130,7 @@ Single MAAS region service [single UI/API]
             subnet: cidr:192.168.10.0/24
           mac: '66:55:44:33:22:11'
       commissioning_scripts:
-        00-maas-06-create-raid.sh: /srv/salt/reclass/scripts/commisioning_script.sh
+        00-maas-05-simplify-network-interfaces: /etc/maas/files/commisioning_scripts/00-maas-05-simplify-network-interfaces
       maas_config:
         domain: mydomain.local
         http_proxy: http://192.168.0.10:3142
