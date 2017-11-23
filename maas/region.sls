@@ -159,7 +159,9 @@ maas_subnets:
   - name: maas.process_subnets
   - require:
     - module: maas_config
+    {%- if region.get('fabrics', False)  %}
     - module: maas_fabrics
+    {%- endif %}
 {%- endif %}
 
 {%- if region.get('devices', False)  %}
@@ -168,7 +170,9 @@ maas_devices:
   - name: maas.process_devices
   - require:
     - module: maas_config
+    {%- if region.get('subnets', False)  %}
     - module: maas_subnets
+    {%- endif %}
 {%- endif %}
 
 {%- if region.get('dhcp_snippets', False)  %}
