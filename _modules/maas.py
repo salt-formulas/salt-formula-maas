@@ -52,7 +52,10 @@ STATUS_NAME_DICT = dict([
     (9, 'Deploying'), (6, 'Deployed'), (7, 'Retired'), (8, 'Broken'),
     (11, 'Failed deployment'), (12, 'Releasing'),
     (13, 'Releasing failed'), (14, 'Disk erasing'),
-    (15, 'Failed disk erasing')])
+    (15, 'Failed disk erasing'), (16, 'Rescue mode'),
+    (17, 'Entering rescue mode'), (18, 'Failed to enter rescue mode'),
+    (19, 'Exiting rescue mode'), (20, 'Failed to exit rescue mode'),
+    (21, 'Testing'), (22, 'Failed testing')])
 
 
 def _format_data(data):
