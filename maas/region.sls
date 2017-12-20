@@ -20,6 +20,24 @@ maas_region_packages:
   - require:
     - pkg: maas_region_packages
 
+{%- if region.database.initial_data is defined %}
+
+/root/maas/scripts/restore_{{ region.database.name }}.sh:
+  file.managed:
+    - source: salt://maas/files/restore.sh
+    - mode: 770
+    - template: jinja
+
+restore_maas_database_{{ region.database.name }}:
+  cmd.run:
+  - name: /root/maas/scripts/restore_{{ region.database.name }}.sh
+  - unless: "[ -f /root/maas/flags/{{ region.database.name }}-installed ]"
+  - cwd: /root
+  - require:
+    - file: /root/maas/scripts/restore_{{ region.database.name }}.sh
+
+{%- endif %}
+
 {%- if region.get('enable_iframe', False)  %}
 
 /etc/apache2/conf-enabled/maas-http.conf:

@@ -215,6 +215,16 @@ Single MAAS cluster service [multiple racks]
         enabled: true
         role: master/slave
 
+MAAS region service with backup data
+
+.. code-block:: yaml
+    maas:
+      region:
+        database:
+          initial_data:
+            source: cfg01.local
+            host: 192.168.0.11
+
 Module function's example:
 ==========================
 
