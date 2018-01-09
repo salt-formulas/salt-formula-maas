@@ -10,6 +10,6 @@ Vcs-Git: https://github.com/tcpcloud/salt-formula-maas.git
 
 Package: salt-formula-maas
 Architecture: all
-Depends: ${misc:Depends}, salt-master, reclass
+Depends: ${misc:Depends}
 Description: maas salt formula
  Install and configure maas system.
