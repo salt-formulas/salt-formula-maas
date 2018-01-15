@@ -46,14 +46,16 @@ Single MAAS region service [single UI/API]
       user: mirantis
       token: "89EgtWkX45ddjMYpuL:SqVjxFG87Dr6kVf4Wp:5WLfbUgmm9XQtJxm3V2LUUy7bpCmqmnk"
       fabrics:
-        test-fabric:
-          description: Test fabric
+        test-fabric1:
+          description: "Test fabric"
+        test-fabric2:
+          description: "Test fabric2"
       subnets:
         subnet1:
-          fabric: test-fabric
+          fabric: test-fabric1
           cidr: 2.2.3.0/24
           gateway_ip: 2.2.3.2
-          iprange:
+          iprange: # reserved range for DHCP\auto mapping
             start: 2.2.3.20
             end: 2.2.3.250
       dhcp_snippets:
@@ -80,38 +82,29 @@ Single MAAS region service [single UI/API]
                Version: GnuPG v2
 
                mQENBFOpvpgBCADkP656H41i8fpplEEB8IeLhugyC2rTEwwSclb8tQNYtUiGdna9
-               m38kb0OS2DDrEdtdQb2hWCnswxaAkUunb2qq18vd3dBvlnI+C4/xu5ksZZkRj+fW
-               tArNR18V+2jkwcG26m8AxIrT+m4M6/bgnSfHTBtT5adNfVcTHqiT1JtCbQcXmwVw
-               WbqS6v/LhcsBE//SHne4uBCK/GHxZHhQ5jz5h+3vWeV4gvxS3Xu6v1IlIpLDwUts
-               kT1DumfynYnnZmWTGc6SYyIFXTPJLtnoWDb9OBdWgZxXfHEcBsKGha+bXO+m2tHA
-               gNneN9i5f8oNxo5njrL8jkCckOpNpng18BKXABEBAAG0MlNhbHRTdGFjayBQYWNr
-               YWdpbmcgVGVhbSA8cGFja2FnaW5nQHNhbHRzdGFjay5jb20+iQE4BBMBAgAiBQJT
-               qb6YAhsDBgsJCAcDAgYVCAIJCgsEFgIDAQIeAQIXgAAKCRAOCKFJ3le/vhkqB/0Q
-               WzELZf4d87WApzolLG+zpsJKtt/ueXL1W1KA7JILhXB1uyvVORt8uA9FjmE083o1
-               yE66wCya7V8hjNn2lkLXboOUd1UTErlRg1GYbIt++VPscTxHxwpjDGxDB1/fiX2o
-               nK5SEpuj4IeIPJVE/uLNAwZyfX8DArLVJ5h8lknwiHlQLGlnOu9ulEAejwAKt9CU
-               4oYTszYM4xrbtjB/fR+mPnYh2fBoQO4d/NQiejIEyd9IEEMd/03AJQBuMux62tjA
-               /NwvQ9eqNgLw9NisFNHRWtP4jhAOsshv1WW+zPzu3ozoO+lLHixUIz7fqRk38q8Q
-               9oNR31KvrkSNrFbA3D89uQENBFOpvpgBCADJ79iH10AfAfpTBEQwa6vzUI3Eltqb
-               9aZ0xbZV8V/8pnuU7rqM7Z+nJgldibFk4gFG2bHCG1C5aEH/FmcOMvTKDhJSFQUx
-               uhgxttMArXm2c22OSy1hpsnVG68G32Nag/QFEJ++3hNnbyGZpHnPiYgej3FrerQJ
-               zv456wIsxRDMvJ1NZQB3twoCqwapC6FJE2hukSdWB5yCYpWlZJXBKzlYz/gwD/Fr
-               GL578WrLhKw3UvnJmlpqQaDKwmV2s7MsoZogC6wkHE92kGPG2GmoRD3ALjmCvN1E
-               PsIsQGnwpcXsRpYVCoW7e2nW4wUf7IkFZ94yOCmUq6WreWI4NggRcFC5ABEBAAGJ
-               AR8EGAECAAkFAlOpvpgCGwwACgkQDgihSd5Xv74/NggA08kEdBkiWWwJZUZEy7cK
-               WWcgjnRuOHd4rPeT+vQbOWGu6x4bxuVf9aTiYkf7ZjVF2lPn97EXOEGFWPZeZbH4
-               vdRFH9jMtP+rrLt6+3c9j0M8SIJYwBL1+CNpEC/BuHj/Ra/cmnG5ZNhYebm76h5f
-               T9iPW9fFww36FzFka4VPlvA4oB7ebBtquFg3sdQNU/MmTVV4jPFWXxh4oRDDR+8N
-               1bcPnbB11b5ary99F/mqr7RgQ+YFF0uKRE3SKa7a+6cIuHEZ7Za+zhPaQlzAOZlx
+                ......
                fuBmScum8uQTrEF5+Um5zkwC7EXTdH1co/+/V/fpOtxIg4XO4kcugZefVm5ERfVS
                MA==
                =dtMN
                -----END PGP PUBLIC KEY BLOCK-----"
           enabled: true
       machines:
-        machine1:
-          interface:
-            mac: "11:22:33:44:55:66"
+        machine1_new_schema:
+          pxe_interface_mac: "11:22:33:44:55:66" # Node will be identified by those mac
+          interfaces:
+            nic01: # could be any, used for iterate only
+              type: eth # NotImplemented
+              name: eth0 # Override default nic name. Interface to rename will be identified by mac
+              mac: "11:22:33:44:55:66"
+              mode: "static"
+              ip: "2.2.3.19"  # ip should be out of reserved subnet range, but still in subnet range
+              subnet: "subnet1"
+              gateway: "2.2.3.2" # override default gateway from subnet
+            nic02:
+              type: eth # Not-implemented
+              mac: "11:22:33:44:55:78"
+              subnet: "subnet2"
+              mode: "dhcp"
           power_parameters:
             power_type: ipmi
             power_address: '192.168.10.10'
@@ -119,6 +112,23 @@ Single MAAS region service [single UI/API]
             power_password: bmc_password
             #Optional (for legacy HW)
             power_driver: LAN
+          distro_series: xenial
+          hwe_kernel: hwe-16.04
+        machine1_old_schema:
+          interface:
+              mac: "11:22:33:44:55:88"  # Node will be identified by those mac
+              mode: "static"
+              ip: "2.2.3.15"
+              subnet: "subnet1"
+              gateway: "2.2.3.2"
+          power_parameters:
+            power_type: ipmi
+            power_address: '192.168.10.10'
+            power_user: bmc_user
+            power_password: bmc_password
+            #Optional (for legacy HW)
+            power_driver: LAN
+            # FIXME: that's should be moved into another,livirt example.
             # Used in case of power_type: virsh
             power_id: my_libvirt_vm_name
           distro_series: xenial
@@ -150,7 +160,7 @@ Single MAAS region service [single UI/API]
         enable_http_proxy: true
         default_min_hwe_kernel: ''
        sshprefs:
-        - 'ssh-rsa ASDFOSADFISdfasdfasjdklfjasdJFASDJfASdf923@AAAAB3NzaC1yc2EAAAADAQABAAACAQCv8ISOESGgYUOycYw1SAs/SfHTqtSCTephD/7o2+mEZO53xN98sChiFscFaPA2ZSMoZbJ6MQLKcWKMK2OaTdNSAvn4UE4T6VP0ccdumHDNRwO3f6LptvXr9NR5Wocz2KAgptk+uaA8ytM0Aj9NT0UlfjAXkKnoKyNq6yG+lx4HpwolVaFSlqRXf/iuHpCrspv/u1NW7ReMElJoXv+0zZ7Ow0ZylISdYkaqbV8QatCb17v1+xX03xLsZigfugce/8CDsibSYvJv+Hli5CCBsKgfFqLy4R5vGxiLSVzG/asdjalskjdlkasjdasd/asdajsdkjalaksdjfasd/fa/sdf/asd/fas/dfsadf blah@blah'
+        - 'ssh-rsa ASD.........dfsadf blah@blah'
 
 
 
@@ -169,29 +179,7 @@ Usage of local repos
         Version: GnuPG v2
 
         mQENBFOpvpgBCADkP656H41i8fpplEEB8IeLhugyC2rTEwwSclb8tQNYtUiGdna9
-        m38kb0OS2DDrEdtdQb2hWCnswxaAkUunb2qq18vd3dBvlnI+C4/xu5ksZZkRj+fW
-        tArNR18V+2jkwcG26m8AxIrT+m4M6/bgnSfHTBtT5adNfVcTHqiT1JtCbQcXmwVw
-        WbqS6v/LhcsBE//SHne4uBCK/GHxZHhQ5jz5h+3vWeV4gvxS3Xu6v1IlIpLDwUts
-        kT1DumfynYnnZmWTGc6SYyIFXTPJLtnoWDb9OBdWgZxXfHEcBsKGha+bXO+m2tHA
-        gNneN9i5f8oNxo5njrL8jkCckOpNpng18BKXABEBAAG0MlNhbHRTdGFjayBQYWNr
-        YWdpbmcgVGVhbSA8cGFja2FnaW5nQHNhbHRzdGFjay5jb20+iQE4BBMBAgAiBQJT
-        qb6YAhsDBgsJCAcDAgYVCAIJCgsEFgIDAQIeAQIXgAAKCRAOCKFJ3le/vhkqB/0Q
-        WzELZf4d87WApzolLG+zpsJKtt/ueXL1W1KA7JILhXB1uyvVORt8uA9FjmE083o1
-        yE66wCya7V8hjNn2lkLXboOUd1UTErlRg1GYbIt++VPscTxHxwpjDGxDB1/fiX2o
-        nK5SEpuj4IeIPJVE/uLNAwZyfX8DArLVJ5h8lknwiHlQLGlnOu9ulEAejwAKt9CU
-        4oYTszYM4xrbtjB/fR+mPnYh2fBoQO4d/NQiejIEyd9IEEMd/03AJQBuMux62tjA
-        /NwvQ9eqNgLw9NisFNHRWtP4jhAOsshv1WW+zPzu3ozoO+lLHixUIz7fqRk38q8Q
-        9oNR31KvrkSNrFbA3D89uQENBFOpvpgBCADJ79iH10AfAfpTBEQwa6vzUI3Eltqb
-        9aZ0xbZV8V/8pnuU7rqM7Z+nJgldibFk4gFG2bHCG1C5aEH/FmcOMvTKDhJSFQUx
-        uhgxttMArXm2c22OSy1hpsnVG68G32Nag/QFEJ++3hNnbyGZpHnPiYgej3FrerQJ
-        zv456wIsxRDMvJ1NZQB3twoCqwapC6FJE2hukSdWB5yCYpWlZJXBKzlYz/gwD/Fr
-        GL578WrLhKw3UvnJmlpqQaDKwmV2s7MsoZogC6wkHE92kGPG2GmoRD3ALjmCvN1E
-        PsIsQGnwpcXsRpYVCoW7e2nW4wUf7IkFZ94yOCmUq6WreWI4NggRcFC5ABEBAAGJ
-        AR8EGAECAAkFAlOpvpgCGwwACgkQDgihSd5Xv74/NggA08kEdBkiWWwJZUZEy7cK
-        WWcgjnRuOHd4rPeT+vQbOWGu6x4bxuVf9aTiYkf7ZjVF2lPn97EXOEGFWPZeZbH4
-        vdRFH9jMtP+rrLt6+3c9j0M8SIJYwBL1+CNpEC/BuHj/Ra/cmnG5ZNhYebm76h5f
-        T9iPW9fFww36FzFka4VPlvA4oB7ebBtquFg3sdQNU/MmTVV4jPFWXxh4oRDDR+8N
-        1bcPnbB11b5ary99F/mqr7RgQ+YFF0uKRE3SKa7a+6cIuHEZ7Za+zhPaQlzAOZlx
+        .....
         fuBmScum8uQTrEF5+Um5zkwC7EXTdH1co/+/V/fpOtxIg4XO4kcugZefVm5ERfVS
         MA==
         =dtMN
@@ -269,7 +257,17 @@ If module run w/\o any extra paremeters - `wait_for_machines_ready` will wait fo
         - cmd: maas_login_admin
       ...
 
-List of avaibled `req_status` defined in global variable:
+List of available `req_status` defined in global variable:
+
+.. code-block:: python
+
+    STATUS_NAME_DICT = dict([
+        (0, 'New'), (1, 'Commissioning'), (2, 'Failed commissioning'),
+        (3, 'Missing'), (4, 'Ready'), (5, 'Reserved'), (10, 'Allocated'),
+        (9, 'Deploying'), (6, 'Deployed'), (7, 'Retired'), (8, 'Broken'),
+        (11, 'Failed deployment'), (12, 'Releasing'),
+        (13, 'Releasing failed'), (14, 'Disk erasing'),
+        (15, 'Failed disk erasing')])
 
 
 Read more
