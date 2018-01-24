@@ -163,6 +163,104 @@ Single MAAS region service [single UI/API]
         - 'ssh-rsa ASD.........dfsadf blah@blah'
 
 
+Create disk schema per machine via maas/client.sls with default lvm schema + default values
+
+NOTE: This should be used mostly for custom root partitioning and RAID configuration. For not-root partitions please use salt-formulas/salt-formula-linux.
+
+.. code-block:: yaml
+
+  maas:
+    region:
+      machines:
+        server1:
+          disk_layout:
+            type: lvm
+            root_size: 20G
+            root_device: vda
+            volume_group: vg1
+            volume_name: root
+            volume_size: 8
+            bootable_device: vda
+
+FLAT layout with custom root size
+
+.. code-block:: yaml
+
+  maas:
+    region:
+      machines:
+        server2:
+          disk_layout:
+            type: flat
+            root_size: 20
+            physical_device: vda
+            bootable_device: vda
+
+Define more complex layout
+
+.. code-block:: yaml
+
+  maas:
+    region:
+      machines:
+        server3:
+          disk_layout:
+            type: flat #This is simplies setup
+            bootable_device: vda
+            disk:
+              vda:
+                type: physical
+                partition_schema:
+                  part1:
+                    size: 10G
+                    type: ext4
+                    mount: '/'
+                  part2:
+                    size: 2G
+                  part3:
+                    size: 3G
+              vdc:
+                type: physical
+                partition_schema:
+                  part1:
+                    size: 100%
+              vdd:
+                type: physical
+                partition_schema:
+                  part1:
+                    size: 100%
+              raid0:
+                type: raid
+                level: 10
+                devices:
+                  - vde
+                  - vdf
+                partition_schema:
+                  part1:
+                    size: 10G
+                  part2:
+                    size: 2G
+                  part3:
+                    size: 3G
+              raid1:
+                type: raid
+                level: 1
+                partitions:
+                  - vdc-part1
+                  - vdd-part1
+              volume_group2:
+                type: lvm
+                devices:
+                  - raid1
+                volume:
+                  tmp:
+                    size: 5G
+                    fs_type: ext4
+                    mount: '/tmp'
+                  log:
+                    size: 7G
+                    fs_type: ext4
+                    mount: '/var/log'
 
 Usage of local repos
 
