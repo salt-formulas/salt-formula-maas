@@ -128,8 +128,8 @@ maas_machine_volume_{{ machine_name }}_{{ disk_name }}_{{ volume_name }}:
     - name: {{ volume_name }}
     - volume_group_name: {{ disk_name }}
     - size: {{ volume.size }}
-    {%- if volume.fs_type is defined %}
-    - fs_type: {{ volume.fs_type }}
+    {%- if volume.type is defined %}
+    - type: {{ volume.type }}
     {%- endif %}
     {%- if volume.mount is defined %}
     - mount: {{ volume.mount }}

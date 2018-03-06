@@ -119,7 +119,7 @@ def disk_partition_present(hostname, disk, partition_schema={}):
         #a. validate count of partitions
         #b. validate size of partitions
     #2. If not delete all partitions on disk and recreate schema
-    #3. Validate fs_type exists
+    #3. Validate type exists
         #if should not exits
         #delete mount and unformat
     #4. Validate mount exists
@@ -231,7 +231,7 @@ def volume_group_present(hostname, name, devices=[], partitions=[]):
 
     return ret
 
-def volume_present(hostname, name, volume_group_name, size, fs_type=None, mount=None):
+def volume_present(hostname, name, volume_group_name, size, type=None, mount=None):
     '''
     Ensure that the disk layout does exist
 
@@ -260,7 +260,7 @@ def volume_present(hostname, name, volume_group_name, size, fs_type=None, mount=
 
     #TODO validation if exists
 
-    ret["changes"] = __salt__['maasng.create_volume'](hostname, name, volume_group_name, size, fs_type, mount)
+    ret["changes"] = __salt__['maasng.create_volume'](hostname, name, volume_group_name, size, type, mount)
 
     return ret
 

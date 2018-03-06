@@ -255,11 +255,11 @@ Define more complex layout
                 volume:
                   tmp:
                     size: 5G
-                    fs_type: ext4
+                    type: ext4
                     mount: '/tmp'
                   log:
                     size: 7G
-                    fs_type: ext4
+                    type: ext4
                     mount: '/var/log'
 
 Usage of local repos
