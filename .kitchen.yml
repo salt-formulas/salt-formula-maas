@@ -77,9 +77,9 @@ suites:
       #pillars-from-files:
         #maas.sls: tests/pillar/maas_mirror.sls
 
-  #- name: maas_region
-    #provisioner:
-      #pillars-from-files:
-        #maas.sls: tests/pillar/maas_region.sls
+#  - name: maas_region
+#    provisioner:
+#      pillars-from-files:
+#        maas.sls: tests/pillar/maas_region.sls
 
 # vim: ft=yaml sw=2 ts=2 sts=2 tw=125

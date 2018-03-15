@@ -40,7 +40,12 @@ maas_cluster_packages:
 
 /etc/maas/rackd.conf:
   file.line:
-  - content: 'maas_url: http://{{ cluster.region.host }}/MAAS'
+{%- if cluster.region.get('port', False)  %}
+  {%- set maas_url = 'http://' + cluster.region.host|string + ':' + cluster.region.port|string + '/MAAS' -%}
+{%- else %}
+  {%- set maas_url = 'http://' + cluster.region.host|string + '/MAAS' -%}
+{%- endif %}
+  - content: "maas_url: {{ maas_url }}"
   - match: 'maas_url*'
   - mode: replace
   - location: end

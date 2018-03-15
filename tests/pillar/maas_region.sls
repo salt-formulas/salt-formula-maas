@@ -3,13 +3,15 @@ maas:
     enabled: true
     region:
       host: localhost
+      port: 80
     role: master
     enable_iframe: True
   region:
-    theme: theme
+    enabled: true
     bind:
       host: localhost
       port: 80
+    theme: theme
     admin:
       username: admin
       password: password
@@ -20,5 +22,4 @@ maas:
       name: maasdb
       password: password
       username: maas
-    enabled: true
     salt_master_ip: 127.0.0.1
