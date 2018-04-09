@@ -64,6 +64,13 @@ Single MAAS region service [single UI/API]
           description: Test snippet
           enabled: true
           subnet: subnet1
+      boot_sources:
+        maas_mirror:
+          url: http://images.maas.io/ephemeral-v3/daily/
+          keyring_file: /usr/share/keyrings/ubuntu-cloudimage-keyring.gpg
+        local_mirror:
+          url: http://127.0.0.1/maas/images/ephemeral-v3/daily
+          keyring_file: /usr/share/keyrings/ubuntu-cloudimage-keyring.gpg
       boot_resources:
         bootscript1:
           title: bootscript
@@ -261,6 +268,23 @@ Define more complex layout
                     size: 7G
                     type: ext4
                     mount: '/var/log'
+
+Setup image mirror
+
+.. code-block:: yaml
+
+  maas:
+    mirror:
+      enabled: true
+      image:
+        release:
+          xenial:
+          keyring: /usr/share/keyrings/ubuntu-cloudimage-keyring.gpg
+          upstream: http://images.maas.io/ephemeral-v3/daily/
+          local_dir: /var/www/html/maas/images/ephemeral-v3/daily
+          arch: amd64
+          subarch: 'generic|hwe-t'
+          count: 1
 
 Usage of local repos
 

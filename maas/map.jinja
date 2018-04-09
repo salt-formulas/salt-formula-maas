@@ -24,3 +24,11 @@ Debian:
 {%- endload %}
 
 {%- set region = salt['grains.filter_by'](region_defaults, merge=salt['pillar.get']('maas:region', {})) %}
+
+{%- load_yaml as mirror_defaults %}
+Debian:
+  pkgs:
+  - simplestreams
+{%- endload %}
+
+{%- set mirror = salt['grains.filter_by'](mirror_defaults, merge=salt['pillar.get']('maas:mirror', {})) %}

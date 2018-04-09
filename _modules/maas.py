@@ -176,7 +176,11 @@ class MaasObject(object):
             LOG.exception('Error Global')
             raise
         if ret['errors']:
-            raise Exception(ret)
+            if 'already exists' in str(ret['errors']):
+                ret['success'] = ret['errors']
+                ret['errors'] = {}
+            else:
+                raise Exception(ret)
         return ret
 
 
@@ -280,6 +284,27 @@ class DHCPSnippet(MaasObject):
         new['id'] = str(old['id'])
         return new
 
+
+class Boot_source(MaasObject):
+    def __init__(self):
+        super(Boot_source, self).__init__()
+        self._all_elements_url = u'api/2.0/boot-sources/'
+        self._create_url = u'api/2.0/boot-sources/'
+        self._update_url = u'api/2.0/boot-sources/{0}/'
+        self._config_path = 'region.boot_sources'
+        self._element_key = 'id'
+
+    def fill_data(self, name, boot_source):
+        data = {
+            'name': name,
+            'url': boot_source.get('url', ''),
+            'keyring_filename': boot_source.get('keyring_file', ''),
+        }
+        return data
+
+    def update(self, new, old):
+        new['id'] = str(old['id'])
+        return new
 
 class PacketRepository(MaasObject):
     def __init__(self):
@@ -892,6 +917,8 @@ class MachinesStatus(MaasObject):
 def process_fabrics():
     return Fabric().process()
 
+def process_boot_sources():
+    return Boot_source().process()
 
 def process_subnets():
     return Subnet().process()

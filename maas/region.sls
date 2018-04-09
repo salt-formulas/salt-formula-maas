@@ -193,6 +193,14 @@ maas_devices:
     {%- endif %}
 {%- endif %}
 
+{%- if region.get('boot_sources', False)  %}
+maas_boot_sources:
+  module.run:
+  - name: maas.process_boot_sources
+  - require:
+    - module: maas_config
+{%- endif %}
+
 {%- if region.get('dhcp_snippets', False)  %}
 maas_dhcp_snippets:
   module.run:
