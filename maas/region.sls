@@ -137,6 +137,14 @@ maas_config:
   - require:
     - cmd: maas_login_admin
 
+{%- if region.get('boot_sources', False)  %}
+maas_boot_sources:
+  module.run:
+  - name: maas.process_boot_sources
+  - require:
+    - cmd: maas_set_admin_password
+{%- endif %}
+
 {%- if region.get('commissioning_scripts', False)  %}
 /etc/maas/files/commisioning_scripts/:
   file.directory:
@@ -191,14 +199,6 @@ maas_devices:
     {%- if region.get('subnets', False)  %}
     - module: maas_subnets
     {%- endif %}
-{%- endif %}
-
-{%- if region.get('boot_sources', False)  %}
-maas_boot_sources:
-  module.run:
-  - name: maas.process_boot_sources
-  - require:
-    - module: maas_config
 {%- endif %}
 
 {%- if region.get('dhcp_snippets', False)  %}
