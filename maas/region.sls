@@ -26,6 +26,7 @@ maas_region_packages:
   file.managed:
     - source: salt://maas/files/restore.sh
     - mode: 770
+    - makedirs: true
     - template: jinja
 
 restore_maas_database_{{ region.database.name }}:
