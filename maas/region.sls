@@ -232,6 +232,21 @@ maas_domain:
   - require:
     - module: maas_config
 
+{%- if region.fabrics is defined %}
+{%- for fabric_name, fabric in region.fabrics.iteritems() %}
+{%- for vid, vlan in fabric.get('vlan',{}).items() %}
+maas_update_vlan_for_{{ fabric_name }}_{{ vid }}:
+  maasng.update_vlan:
+  - vid: {{ vid }}
+  - fabric: {{ fabric_name }}
+  - name: {{ vlan.get('name','') }}
+  - description: {{ vlan.description }}
+  - dhcp_on: {{ vlan.get('dhcp','False') }}
+{%- endfor %}
+{%- endfor %}
+{%- endif %}
+
+
 {%- if region.get('sshprefs', False)  %}
 maas_sshprefs:
   module.run:

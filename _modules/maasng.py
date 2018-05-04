@@ -22,7 +22,7 @@ import logging
 import os.path
 import time
 import urllib2
-#Salt utils
+# Salt utils
 from salt.exceptions import CommandExecutionError, SaltInvocationError
 
 LOG = logging.getLogger(__name__)
@@ -61,12 +61,14 @@ def __virtual__():
 
 APIKEY_FILE = '/var/lib/maas/.maas_credentials'
 
+
 def _format_data(data):
     class Lazy:
         def __str__(self):
             return ' '.join(['{0}={1}'.format(k, v)
-                            for k, v in data.iteritems()])
+                             for k, v in data.iteritems()])
     return Lazy()
+
 
 def _create_maas_client():
     global APIKEY_FILE
@@ -80,22 +82,26 @@ def _create_maas_client():
     dispatcher = MAASDispatcher()
     return MAASClient(auth, dispatcher, api_url)
 
-def _get_blockdevice_id_by_name(hostname,device):
 
-    ##TODO validation
+def _get_blockdevice_id_by_name(hostname, device):
+
+    # TODO validation
     return list_blockdevices(hostname)[device]["id"]
 
-def _get_volume_group_id_by_name(hostname,device):
 
-    ##TODO validation
+def _get_volume_group_id_by_name(hostname, device):
+
+    # TODO validation
     return list_volume_groups(hostname)[device]["id"]
+
 
 def _get_partition_id_by_name(hostname, device, partition):
 
-    ##TODO validation
+    # TODO validation
     return list_partitions(hostname, device)[partition]["id"]
 
-####MACHINE SECTION
+# MACHINE SECTION
+
 
 def get_machine(hostname):
     '''
@@ -112,6 +118,7 @@ def get_machine(hostname):
     except KeyError:
         return {"error": "Machine not found on MaaS server"}
 
+
 def list_machines():
     '''
     Get list of all machines from maas server
@@ -122,27 +129,30 @@ def list_machines():
 
         salt 'maas-node' maasng.list_machines
     '''
-    machines={}
-    maas=_create_maas_client()
+    machines = {}
+    maas = _create_maas_client()
     json_res = json.loads(maas.get(u'api/2.0/machines/').read())
     for item in json_res:
         machines[item["hostname"]] = item
     return machines
 
+
 def create_machine():
-    ##TODO
+    # TODO
 
     return False
+
 
 def update_machine():
-    ##TODO
+    # TODO
 
     return False
 
-####MACHINE OPERATIONS
-##TODO
+# MACHINE OPERATIONS
+# TODO
 
-####RAID SECTION
+# RAID SECTION
+
 
 def create_raid(hostname, name, level, disks=[], partitions=[], **kwargs):
     '''
@@ -165,18 +175,20 @@ def create_raid(hostname, name, level, disks=[], partitions=[], **kwargs):
 
     for disk in disks:
         try:
-            disk_ids.append(str(_get_blockdevice_id_by_name(hostname,disk)))
+            disk_ids.append(str(_get_blockdevice_id_by_name(hostname, disk)))
         except KeyError:
-            result["error"] = "Device {0} does not exists on machine {1}".format(disk, hostname)
+            result["error"] = "Device {0} does not exists on machine {1}".format(
+                disk, hostname)
             return result
 
     for partition in partitions:
         try:
             device = partition.split("-")[0]
-            device_part = list_partitions(hostname,device)
+            device_part = list_partitions(hostname, device)
             partition_ids.append(str(device_part[partition]["id"]))
         except KeyError:
-            result["error"] = "Partition {0} does not exists on machine {1}".format(partition,hostname)
+            result["error"] = "Partition {0} does not exists on machine {1}".format(
+                partition, hostname)
             return result
 
     data = {
@@ -186,17 +198,19 @@ def create_raid(hostname, name, level, disks=[], partitions=[], **kwargs):
         "partitions": partition_ids,
     }
 
-    maas=_create_maas_client()
+    maas = _create_maas_client()
     system_id = get_machine(hostname)["system_id"]
     LOG.info(system_id)
 
-    #TODO validation
+    # TODO validation
     LOG.info(data)
-    json_res = json.loads(maas.post(u"api/2.0/nodes/{0}/raids/".format(system_id), None, **data).read())
+    json_res = json.loads(
+        maas.post(u"api/2.0/nodes/{0}/raids/".format(system_id), None, **data).read())
     LOG.info(json_res)
     result["new"] = "Raid {0} created".format(name)
 
     return result
+
 
 def list_raids(hostname):
     '''
@@ -209,15 +223,17 @@ def list_raids(hostname):
         salt-call maasng.list_raids server_hostname
     '''
 
-    maas=_create_maas_client()
+    maas = _create_maas_client()
     system_id = get_machine(hostname)["system_id"]
     LOG.info(system_id)
-    #TODO validation
-    json_res = json.loads(maas.get(u"api/2.0/nodes/{0}/raids/".format(system_id)).read())
+    # TODO validation
+    json_res = json.loads(
+        maas.get(u"api/2.0/nodes/{0}/raids/".format(system_id)).read())
     LOG.info(json_res)
 
-    ##TODO return list of raid devices
+    # TODO return list of raid devices
     return True
+
 
 def get_raid(hostname, name):
     '''
@@ -233,7 +249,7 @@ def get_raid(hostname, name):
     return list_raids(hostname)[name]
 
 
-####BLOCKDEVICES SECTION
+# BLOCKDEVICES SECTION
 
 def list_blockdevices(hostname):
     '''
@@ -248,18 +264,20 @@ def list_blockdevices(hostname):
     '''
     ret = {}
 
-    maas=_create_maas_client()
+    maas = _create_maas_client()
     system_id = get_machine(hostname)["system_id"]
     LOG.info(system_id)
 
-    #TODO validation if exists
+    # TODO validation if exists
 
-    json_res = json.loads(maas.get(u"api/2.0/nodes/{0}/blockdevices/".format(system_id)).read())
+    json_res = json.loads(
+        maas.get(u"api/2.0/nodes/{0}/blockdevices/".format(system_id)).read())
     LOG.info(json_res)
     for item in json_res:
         ret[item["name"]] = item
 
     return ret
+
 
 def get_blockdevice(hostname, name):
     '''
@@ -276,7 +294,7 @@ def get_blockdevice(hostname, name):
     return list_blockdevices(hostname)[name]
 
 
-####PARTITIONS
+# PARTITIONS
 
 def list_partitions(hostname, device):
     '''
@@ -290,15 +308,15 @@ def list_partitions(hostname, device):
         salt-call maasng.list_partitions server_hostname sda
     '''
     ret = {}
-    maas=_create_maas_client()
+    maas = _create_maas_client()
     system_id = get_machine(hostname)["system_id"]
     LOG.info(system_id)
 
-    partitions = get_blockdevice(hostname,device)["partitions"]
+    partitions = get_blockdevice(hostname, device)["partitions"]
     LOG.info(partitions)
 
     #json_res = json.loads(maas.get(u"api/2.0/nodes/{0}/blockdevices/{1}/partitions/".format(system_id, device_id)).read())
-    #LOG.info(json_res)
+    # LOG.info(json_res)
 
     if len(device) > 0:
         for item in partitions:
@@ -306,6 +324,7 @@ def list_partitions(hostname, device):
             ret[name] = item
 
     return ret
+
 
 def get_partition(hostname, device, partition):
     '''
@@ -323,6 +342,7 @@ def get_partition(hostname, device, partition):
 
     return list_partitions(partition)[name]
 
+
 def create_partition(hostname, disk, size, fs_type=None, mount=None):
     '''
     Create new partition on device.
@@ -334,13 +354,13 @@ def create_partition(hostname, disk, size, fs_type=None, mount=None):
         salt 'maas-node' maasng.create_partition server_hostname disk_name 10 ext4 "/"
         salt-call maasng.create_partition server_hostname disk_name 10 ext4 "/"
     '''
-    ##TODO validation
+    # TODO validation
     result = {}
-    maas=_create_maas_client()
+    maas = _create_maas_client()
     system_id = get_machine(hostname)["system_id"]
     LOG.info(system_id)
 
-    device_id = _get_blockdevice_id_by_name(hostname,disk)
+    device_id = _get_blockdevice_id_by_name(hostname, disk)
     LOG.info(device_id)
 
     value, unit = size[:-1], size[-1]
@@ -351,8 +371,9 @@ def create_partition(hostname, disk, size, fs_type=None, mount=None):
         "size": calc_size
     }
 
-    #TODO validation
-    partition = json.loads(maas.post(u"api/2.0/nodes/{0}/blockdevices/{1}/partitions/".format(system_id, device_id), None, **data).read())
+    # TODO validation
+    partition = json.loads(maas.post(
+        u"api/2.0/nodes/{0}/blockdevices/{1}/partitions/".format(system_id, device_id), None, **data).read())
     LOG.info(partition)
     result["partition"] = "Partition created on {0}".format(disk)
 
@@ -362,8 +383,9 @@ def create_partition(hostname, disk, size, fs_type=None, mount=None):
         }
         partition_id = str(partition["id"])
         LOG.info("Partition id: " + partition_id)
-        #TODO validation
-        json_res = json.loads(maas.post(u"api/2.0/nodes/{0}/blockdevices/{1}/partition/{2}".format(system_id, device_id, partition_id), "format", **data_fs_type).read())
+        # TODO validation
+        json_res = json.loads(maas.post(u"api/2.0/nodes/{0}/blockdevices/{1}/partition/{2}".format(
+            system_id, device_id, partition_id), "format", **data_fs_type).read())
         LOG.info(json_res)
         result["filesystem"] = "Filesystem {0} created".format(fs_type)
 
@@ -372,13 +394,14 @@ def create_partition(hostname, disk, size, fs_type=None, mount=None):
             "mount_point": mount
         }
 
-        #TODO validation
-        json_res = json.loads(maas.post(u"api/2.0/nodes/{0}/blockdevices/{1}/partition/{2}".format(system_id, device_id, str(partition['id'])), "mount", **data).read())
+        # TODO validation
+        json_res = json.loads(maas.post(u"api/2.0/nodes/{0}/blockdevices/{1}/partition/{2}".format(
+            system_id, device_id, str(partition['id'])), "mount", **data).read())
         LOG.info(json_res)
         result["mount"] = "Mount point {0} created".format(mount)
 
-
     return result
+
 
 def delete_partition(hostname, disk, partition_name):
     '''
@@ -395,18 +418,20 @@ def delete_partition(hostname, disk, partition_name):
     '''
     result = {}
     data = {}
-    maas=_create_maas_client()
+    maas = _create_maas_client()
     system_id = get_machine(hostname)["system_id"]
     LOG.info(system_id)
 
-    device_id = _get_blockdevice_id_by_name(hostname,disk)
+    device_id = _get_blockdevice_id_by_name(hostname, disk)
     LOG.info(device_id)
 
-    partition_id = _get_partition_id_by_name(hostname,disk,partition_name)
+    partition_id = _get_partition_id_by_name(hostname, disk, partition_name)
 
-    maas.delete(u"api/2.0/nodes/{0}/blockdevices/{1}/partition/{2}".format(system_id, device_id, partition_id)).read()
+    maas.delete(u"api/2.0/nodes/{0}/blockdevices/{1}/partition/{2}".format(
+        system_id, device_id, partition_id)).read()
     result["new"] = "Partition {0} deleted".format(partition_name)
     return result
+
 
 def delete_partition_by_id(hostname, disk, partition_id):
     '''
@@ -423,19 +448,21 @@ def delete_partition_by_id(hostname, disk, partition_id):
     '''
     result = {}
     data = {}
-    maas=_create_maas_client()
+    maas = _create_maas_client()
     system_id = get_machine(hostname)["system_id"]
     LOG.info(system_id)
 
-    device_id = _get_blockdevice_id_by_name(hostname,disk)
+    device_id = _get_blockdevice_id_by_name(hostname, disk)
     LOG.info(device_id)
 
-    maas.delete(u"api/2.0/nodes/{0}/blockdevices/{1}/partition/{2}".format(system_id, device_id, partition_id)).read()
+    maas.delete(u"api/2.0/nodes/{0}/blockdevices/{1}/partition/{2}".format(
+        system_id, device_id, partition_id)).read()
     result["new"] = "Partition {0} deleted".format(partition_id)
     return result
 
-####CREATE DISK LAYOUT
-##TODO
+# CREATE DISK LAYOUT
+# TODO
+
 
 def update_disk_layout(hostname, layout, root_size=None, root_device=None, volume_group=None, volume_name=None, volume_size=None):
     '''
@@ -455,7 +482,7 @@ def update_disk_layout(hostname, layout, root_size=None, root_device=None, volum
         "storage_layout": layout,
     }
 
-    maas=_create_maas_client()
+    maas = _create_maas_client()
     system_id = get_machine(hostname)["system_id"]
     LOG.info(system_id)
 
@@ -464,10 +491,10 @@ def update_disk_layout(hostname, layout, root_size=None, root_device=None, volum
         LOG.info(bit_size)
         data["root_size"] = bit_size
 
-
     if root_device != None:
         LOG.info(root_device)
-        data["root_device"] = str(_get_blockdevice_id_by_name(hostname,root_device))
+        data["root_device"] = str(
+            _get_blockdevice_id_by_name(hostname, root_device))
 
     if layout == 'lvm':
         if volume_group != None:
@@ -481,9 +508,9 @@ def update_disk_layout(hostname, layout, root_size=None, root_device=None, volum
             LOG.info(vol_size)
             data["lv_size"] = vol_size
 
-
-    #TODO validation
-    json_res = json.loads(maas.post(u"api/2.0/machines/{0}/".format(system_id), "set_storage_layout", **data).read())
+    # TODO validation
+    json_res = json.loads(maas.post(
+        u"api/2.0/machines/{0}/".format(system_id), "set_storage_layout", **data).read())
     LOG.info(json_res)
     result["new"] = {
         "storage_layout": layout,
@@ -492,8 +519,8 @@ def update_disk_layout(hostname, layout, root_size=None, root_device=None, volum
     return result
 
 
-####LVM
-##TODO
+# LVM
+# TODO
 
 def list_volume_groups(hostname):
     '''
@@ -508,17 +535,18 @@ def list_volume_groups(hostname):
     '''
     volume_groups = {}
 
-    maas=_create_maas_client()
+    maas = _create_maas_client()
     system_id = get_machine(hostname)["system_id"]
     LOG.info(system_id)
 
-    #TODO validation if exists
+    # TODO validation if exists
 
-    json_res = json.loads(maas.get(u"api/2.0/nodes/{0}/volume-groups/".format(system_id)).read())
+    json_res = json.loads(
+        maas.get(u"api/2.0/nodes/{0}/volume-groups/".format(system_id)).read())
     LOG.info(json_res)
     for item in json_res:
         volume_groups[item["name"]] = item
-    #return
+    # return
     return volume_groups
 
 
@@ -533,7 +561,7 @@ def get_volume_group(hostname, name):
         salt 'maas-node' maasng.list_blockdevices server_hostname
         salt-call maasng.list_blockdevices server_hostname
     '''
-    ##TODO validation that exists
+    # TODO validation that exists
     return list_volume_groups(hostname)[name]
 
 
@@ -554,7 +582,7 @@ def create_volume_group(hostname, volume_group_name, disks=[], partitions=[]):
         "name": volume_group_name,
     }
 
-    maas=_create_maas_client()
+    maas = _create_maas_client()
     system_id = get_machine(hostname)["system_id"]
     LOG.info(system_id)
 
@@ -566,16 +594,18 @@ def create_volume_group(hostname, volume_group_name, disks=[], partitions=[]):
         if p_disk["partition_table_type"] == None:
             disk_ids.append(str(p_disk["id"]))
         else:
-            result["error"] = "Device {0} on machine {1} cointains partition table".format(disk,hostname)
+            result["error"] = "Device {0} on machine {1} cointains partition table".format(
+                disk, hostname)
             return result
 
     for partition in partitions:
         try:
             device = partition.split("-")[0]
-            device_part = list_partitions(hostname,device)
+            device_part = list_partitions(hostname, device)
             partition_ids.append(str(device_part[partition]["id"]))
         except KeyError:
-            result["error"] = "Partition {0} does not exists on machine {1}".format(partition,hostname)
+            result["error"] = "Partition {0} does not exists on machine {1}".format(
+                partition, hostname)
             return result
 
     data["block_devices"] = disk_ids
@@ -583,12 +613,14 @@ def create_volume_group(hostname, volume_group_name, disks=[], partitions=[]):
     LOG.info(partition_ids)
     LOG.info(partitions)
 
-    #TODO validation
-    json_res = json.loads(maas.post(u"api/2.0/nodes/{0}/volume-groups/".format(system_id), None, **data).read())
+    # TODO validation
+    json_res = json.loads(maas.post(
+        u"api/2.0/nodes/{0}/volume-groups/".format(system_id), None, **data).read())
     LOG.info(json_res)
     result["new"] = "Volume group {0} created".format(json_res["name"])
 
     return result
+
 
 def delete_volume_group(hostname, name):
     '''
@@ -602,20 +634,21 @@ def delete_volume_group(hostname, name):
         salt-call maasng.delete_volume_group server_hostname vg0
     '''
 
-    maas=_create_maas_client()
+    maas = _create_maas_client()
     system_id = get_machine(hostname)["system_id"]
     LOG.info(system_id)
 
-    #TODO partitions
-    #for partition in partitions:
+    # TODO partitions
+    # for partition in partitions:
     #    temp = disk.split("-")
     #    disk_ids.append(str(_get_blockdevice_id_by_name(hostname, temp[] partition)))
 
-    #TODO partitions
+    # TODO partitions
     vg_id = name
 
-    #TODO validation
-    json_res = json.loads(maas.delete(u"api/2.0/nodes/{0}/volume-group/{1}/".format(system_id, vg_id)).read())
+    # TODO validation
+    json_res = json.loads(maas.delete(
+        u"api/2.0/nodes/{0}/volume-group/{1}/".format(system_id, vg_id)).read())
     LOG.info(json_res)
 
     return True
@@ -643,7 +676,7 @@ def create_volume(hostname, volume_name, volume_group, size, fs_type=None, mount
 
     data["size"] = bit_size
 
-    maas=_create_maas_client()
+    maas = _create_maas_client()
     system_id = get_machine(hostname)["system_id"]
     LOG.info(system_id)
 
@@ -651,56 +684,65 @@ def create_volume(hostname, volume_name, volume_group, size, fs_type=None, mount
 
     LOG.info(volume_group_id)
 
-    #TODO validation
-    json_res = json.loads(maas.post(u"api/2.0/nodes/{0}/volume-group/{1}/".format(system_id, volume_group_id), "create_logical_volume", **data).read())
+    # TODO validation
+    json_res = json.loads(maas.post(u"api/2.0/nodes/{0}/volume-group/{1}/".format(
+        system_id, volume_group_id), "create_logical_volume", **data).read())
     LOG.info(json_res)
 
     if fs_type != None or mount != None:
-        ret = create_volume_filesystem(hostname, volume_group + "-" + volume_name, fs_type, mount)
+        ret = create_volume_filesystem(
+            hostname, volume_group + "-" + volume_name, fs_type, mount)
 
     return True
 
-def create_volume_filesystem(hostname, device, fs_type= None, mount = None):
 
-    maas=_create_maas_client()
+def create_volume_filesystem(hostname, device, fs_type=None, mount=None):
+
+    maas = _create_maas_client()
     system_id = get_machine(hostname)["system_id"]
 
     blockdevices_id = _get_blockdevice_id_by_name(hostname, device)
     data = {}
     if fs_type != None:
         data["fstype"] = fs_type
-        #TODO validation
-        json_res = json.loads(maas.post(u"/api/2.0/nodes/{0}/blockdevices/{1}/".format(system_id, blockdevices_id), "format", **data).read())
+        # TODO validation
+        json_res = json.loads(maas.post(u"/api/2.0/nodes/{0}/blockdevices/{1}/".format(
+            system_id, blockdevices_id), "format", **data).read())
         LOG.info(json_res)
 
     if mount != None:
         data["mount_point"] = mount
-        #TODO validation
-        json_res = json.loads(maas.post(u"/api/2.0/nodes/{0}/blockdevices/{1}/".format(system_id, blockdevices_id), "mount", **data).read())
+        # TODO validation
+        json_res = json.loads(maas.post(u"/api/2.0/nodes/{0}/blockdevices/{1}/".format(
+            system_id, blockdevices_id), "mount", **data).read())
         LOG.info(json_res)
 
     return True
 
-def create_partition_filesystem(hostname, partition, fs_type= None, mount = None):
 
-    maas=_create_maas_client()
+def create_partition_filesystem(hostname, partition, fs_type=None, mount=None):
+
+    maas = _create_maas_client()
     system_id = get_machine(hostname)["system_id"]
 
     blockdevices_id = _get_blockdevice_id_by_name(hostname, device)
     data = {}
     if fs_type != None:
         data["fstype"] = fs_type
-        #TODO validation
-        json_res = json.loads(maas.post(u"/api/2.0/nodes/{0}/blockdevices/{1}/".format(system_id, blockdevices_id), "format", **data).read())
+        # TODO validation
+        json_res = json.loads(maas.post(u"/api/2.0/nodes/{0}/blockdevices/{1}/".format(
+            system_id, blockdevices_id), "format", **data).read())
         LOG.info(json_res)
 
     if mount != None:
         data["mount_point"] = mount
-        #TODO validation
-        json_res = json.loads(maas.post(u"/api/2.0/nodes/{0}/blockdevices/{1}/".format(system_id, blockdevices_id), "mount", **data).read())
+        # TODO validation
+        json_res = json.loads(maas.post(u"/api/2.0/nodes/{0}/blockdevices/{1}/".format(
+            system_id, blockdevices_id), "mount", **data).read())
         LOG.info(json_res)
 
     return True
+
 
 def set_boot_disk(hostname, name):
     '''
@@ -715,12 +757,142 @@ def set_boot_disk(hostname, name):
     '''
     data = {}
     result = {}
-    maas=_create_maas_client()
+    maas = _create_maas_client()
     system_id = get_machine(hostname)["system_id"]
     blockdevices_id = _get_blockdevice_id_by_name(hostname, name)
 
-    maas.post(u"/api/2.0/nodes/{0}/blockdevices/{1}/".format(system_id, blockdevices_id), "set_boot_disk", **data).read()
-    #TODO validation for error response (disk does not exists and node does not exists)
+    maas.post(u"/api/2.0/nodes/{0}/blockdevices/{1}/".format(
+        system_id, blockdevices_id), "set_boot_disk", **data).read()
+    # TODO validation for error response (disk does not exists and node does not exists)
     result["new"] = "Disk {0} was set as bootable".format(name)
+
+    return result
+
+
+def list_fabric():
+    '''
+    Get list of all fabric
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.list_fabric
+    '''
+    fabrics = {}
+    maas = _create_maas_client()
+    json_res = json.loads(maas.get(u'api/2.0/fabrics/').read())
+    LOG.info(json_res)
+    for item in json_res:
+        fabrics[item["name"]] = item
+    return fabrics
+
+
+def create_fabric(name):
+    '''
+    Create new fabric.
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.create_fabric
+    '''
+    result = {}
+    data = {
+        "name": name,
+        "description": '',
+        "class_type": '',
+
+    }
+
+    maas = _create_maas_client()
+    json_res = json.loads(maas.post(u"api/2.0/fabrics/", None, **data).read())
+    LOG.info(json_res)
+    result["new"] = "Fabrics {0} created".format(json_res["name"])
+    return result
+
+
+def list_subnet():
+    '''
+    Get list of all subnets
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.list_subnet
+    '''
+    subnets = {}
+    maas = _create_maas_client()
+    json_res = json.loads(maas.get(u'api/2.0/subnets/').read())
+    LOG.info(json_res)
+    for item in json_res:
+        subnets[item["name"]] = item
+    return subnets
+
+
+def list_vlans(fabric):
+    '''
+    Get list of all vlans for specific fabric
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.list_vlans
+    '''
+    vlans = {}
+    maas = _create_maas_client()
+    fabric_id = get_fabric(fabric)
+
+    json_res = json.loads(
+        maas.get(u'api/2.0/fabrics/{0}/vlans/'.format(fabric_id)).read())
+    LOG.info(json_res)
+    for item in json_res:
+        vlans[item["name"]] = item
+    return vlans
+
+
+def get_fabric(fabric):
+    '''
+    Get id for specific fabric
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt-call maasng.get_fabric fabric_name
+    '''
+    try:
+        return list_fabric()[fabric]['id']
+    except KeyError:
+        return {"error": "Frabic not found on MaaS server"}
+
+
+def update_vlan(name, fabric, vid, description, dhcp_on=False):
+    '''
+    Update vlan
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.update_vlan name, fabric, vid, description, dhcp_on
+    '''
+    result = {}
+
+    data = {
+        "name": name,
+        "dhcp_on": str(dhcp_on),
+        "description": description,
+    }
+    maas = _create_maas_client()
+    fabric_id = get_fabric(fabric)
+
+    json_res = json.loads(maas.put(
+        u'api/2.0/fabrics/{0}/vlans/{1}/'.format(fabric_id, vid), **data).read())
+    print(json_res)
+    result["new"] = "Vlan {0} was updated".format(json_res["name"])
 
     return result

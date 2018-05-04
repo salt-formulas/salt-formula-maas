@@ -169,6 +169,24 @@ Single MAAS region service [single UI/API]
        sshprefs:
         - 'ssh-rsa ASD.........dfsadf blah@blah'
 
+Update Vlan
+
+NOTE: Vid 0 has default name untagged in MaaS UI
+
+.. code-block:: yaml
+
+  maas:
+    region:
+      fabrics:
+        test-fabric:
+          description: "Test fabric"
+          vlan:
+            0:
+              description: "Your VLAN 0"
+              dhcp: True
+            13:
+              description: "Your VLAN 13"
+              dhcp: False
 
 Create disk schema per machine via maas/client.sls with default lvm schema + default values
 
