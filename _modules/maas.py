@@ -218,7 +218,8 @@ class Subnet(MaasObject):
     def fill_data(self, name, subnet, fabrics):
         data = {
             'name': name,
-            'fabric': str(fabrics[subnet.get('fabric', '')]),
+            'fabric': str(fabrics[subnet.get('fabric',
+                self._get_fabric_from_cidr(subnet.get('cidr')))]),
             'cidr': subnet.get('cidr'),
             'gateway_ip': subnet['gateway_ip'],
         }
@@ -234,6 +235,13 @@ class Subnet(MaasObject):
         res_json = json.loads(response)
         self._process_iprange(res_json['id'])
         return response
+
+    def _get_fabric_from_cidr(self, cidr):
+        subnets = json.loads(self._maas.get(u'api/2.0/subnets/').read())
+        for subnet in subnets:
+            if subnet['cidr'] == cidr:
+                return subnet['vlan']['fabric']
+        return ''
 
     def _process_iprange(self, subnet_id):
         ipranges = json.loads(self._maas.get(u'api/2.0/ipranges/').read())
