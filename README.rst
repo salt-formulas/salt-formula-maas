@@ -221,6 +221,26 @@ FLAT layout with custom root size
             physical_device: vda
             bootable_device: vda
 
+Size specification with `%` char used is not yet supported
+
+
+.. code-block:: yaml
+  maas:
+    region:
+      machines:
+        server3:
+          disk_layout:
+            type: flat
+            bootable_device: sda
+            disk:
+              sda:
+                type: physical
+                partition_schema:
+                  part1:
+                    size: 100%
+                    type: ext4
+                    mount: '/'
+
 Define more complex layout
 
 .. code-block:: yaml
@@ -248,12 +268,12 @@ Define more complex layout
                 type: physical
                 partition_schema:
                   part1:
-                    size: 100%
+                    size: 100G
               vdd:
                 type: physical
                 partition_schema:
                   part1:
-                    size: 100%
+                    size: 100G
               raid0:
                 type: raid
                 level: 10
@@ -286,6 +306,104 @@ Define more complex layout
                     size: 7G
                     type: ext4
                     mount: '/var/log'
+
+Raid setup, 4x HDD
+
+.. code-block:: yaml
+
+  maas:
+    region:
+      machines:
+        serverWithRaidExample:
+          disk_layout:
+            #type: flat
+            #bootable_device: sda
+            disk:
+              md0:
+                type: raid
+                level: 1
+                devices:
+                  - sda
+                  - sdb
+                partition_schema:
+                  part1:
+                    size: 230G
+                    type: ext4
+                    mount: /
+              md1:
+                type: raid
+                level: 1
+                devices:
+                  - sdc
+                  - sdd
+                partition_schema:
+                  part1:
+                    size: 1890G
+                    type: ext4
+                    mount: /var/lib/libvirt
+
+Raid + LVM setup, 2xSSD + 2xHDD
+
+
+Note: This setup lacks the ability run state twice, as of now when "disk_partition_present" is called, it tries blindly to
+delete the partition and then recreated. That fails as maas rejects remove partition used in RAID/LVM.
+
+
+.. code-block:: yaml
+
+  maas:
+    region:
+      machines:
+        serverWithRaidExample2:
+          disk_layout:
+            #type: flat
+            #bootable_device: vgssd-root
+            disk:
+              sda: &maas_disk_physical_ssd
+                type: physical
+                partition_schema:
+                  part1:
+                    size: 239G
+              sdb: *maas_disk_physical_ssd
+              sdc: &maas_disk_physical_hdd
+                type: physical
+                partition_schema:
+                  part1:
+                    size: 1990G
+              sdd: *maas_disk_physical_hdd
+              md0:
+                type: raid
+                level: 1
+                partitions:
+                  - sda-part1
+                  - sdb-part1
+              md1:
+                type: raid
+                level: 1
+                partitions:
+                  - sdc-part1
+                  - sdd-part1
+              vgssd:
+                type: lvm
+                devices:
+                  - md0
+                volume:
+                  root:
+                    size: 230G
+                    type: ext4
+                    mount: '/'
+              vghdd:
+                type: lvm
+                devices:
+                  - md1
+                volume:
+                  libvirt:
+                    size: 1800G
+                    type: ext4
+                    mount: '/var/lib/libvirt'
+
+
+
 
 Setup image mirror
 
