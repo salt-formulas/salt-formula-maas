@@ -1,6 +1,7 @@
 {%- from "maas/map.jinja" import region with context %}
 
-{%- set database = region.get("database", {}) %}
+{%- set backup_dir = pillar.get('backupninja', {}).get('client', {}).get('target', {}).get("home_dir", "/srv/backupninja") -%}
+{%- set database = region.get("database", {}) -%}
 
 export PGHOST={{ database.get("host", "localhost") }}
 export PGUSER={{ database.get("username", "maas") }}
@@ -18,11 +19,11 @@ export PGPASSFILE=/root/.pgpass
 
 mkdir -p {{ target }}
 
-scp backupninja@{{ backupninja_host }}:/srv/backupninja/{{ backupninja_source }}/var/backups/postgresql/postgresql.{{ age }}/{{ source_name }} {{ target }}{{ dest_name }} 
+scp backupninja@{{ backupninja_host }}:{{ backup_dir }}/{{ backupninja_source }}/var/backups/postgresql/postgresql.{{ age }}/{{ source_name }} {{ target }}{{ dest_name }} 
 gunzip -d -1 -f {{ target }}{{ dest_name }}
 
-scp -r backupninja@{{ backupninja_host }}:/srv/backupninja/{{ backupninja_source }}/etc/maas/maas.{{ age }} /etc/maas
-scp -r backupninja@{{ backupninja_host }}:/srv/backupninja/{{ backupninja_source }}/var/lib/maas/maas.{{ age }} /var/lib/maas
+scp -r backupninja@{{ backupninja_host }}:{{ backup_dir }}/{{ backupninja_source }}/etc/maas/maas.{{ age }} /etc/maas
+scp -r backupninja@{{ backupninja_host }}:{{ backup_dir }}/{{ backupninja_source }}/var/lib/maas/maas.{{ age }} /var/lib/maas
 
 sudo systemctl stop maas-dhcpd.service
 sudo systemctl stop maas-rackd.service
