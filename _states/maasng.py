@@ -64,6 +64,9 @@ def disk_layout_present(hostname, layout_type, root_size=None, root_device=None,
         ret["changes"] = __salt__['maasng.update_disk_layout'](
             hostname, layout_type, root_size, root_device, volume_group, volume_name, volume_size)
 
+    elif layout_type == "custom":
+        ret["changes"] = __salt__['maasng.update_disk_layout'](hostname, layout_type)
+
     else:
         ret["comment"] = "Not supported layout provided. Choose flat or lvm"
         ret['result'] = False

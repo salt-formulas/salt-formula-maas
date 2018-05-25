@@ -250,7 +250,7 @@ Define more complex layout
       machines:
         server3:
           disk_layout:
-            type: flat #This is simplies setup
+            type: custom
             bootable_device: vda
             disk:
               vda:
@@ -316,8 +316,8 @@ Raid setup, 4x HDD
       machines:
         serverWithRaidExample:
           disk_layout:
-            #type: flat
-            #bootable_device: sda
+            type: custom
+            bootable_device: sda
             disk:
               md0:
                 type: raid
@@ -356,7 +356,7 @@ delete the partition and then recreated. That fails as maas rejects remove parti
       machines:
         serverWithRaidExample2:
           disk_layout:
-            #type: flat
+            type: custom
             #bootable_device: vgssd-root
             disk:
               sda: &maas_disk_physical_ssd
