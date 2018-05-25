@@ -325,7 +325,7 @@ def select_boot_disk(hostname, name):
     return ret
 
 
-def update_vlan(name, fabric, vid, description, dhcp_on=False):
+def update_vlan(name, fabric, vid, description, primary_rack, dhcp_on=False):
     '''
 
     :param name: Name of vlan
@@ -333,6 +333,7 @@ def update_vlan(name, fabric, vid, description, dhcp_on=False):
     :param vid: Vlan id
     :param description: Description of vlan
     :param dhcp_on: State of dhcp
+    :param primary_rack: primary_rack
 
     '''
 
@@ -342,7 +343,7 @@ def update_vlan(name, fabric, vid, description, dhcp_on=False):
            'comment': 'Module function maasng.update_vlan executed'}
 
     ret["changes"] = __salt__['maasng.update_vlan'](
-        name=name, fabric=fabric, vid=vid, description=description, dhcp_on=dhcp_on)
+        name=name, fabric=fabric, vid=vid, description=description, primary_rack=primary_rack, dhcp_on=dhcp_on)
 
     if "error" in fabric:
         ret['comment'] = "State execution failed for fabric {0}".format(fabric)

@@ -870,7 +870,7 @@ def get_fabric(fabric):
         return {"error": "Frabic not found on MaaS server"}
 
 
-def update_vlan(name, fabric, vid, description, dhcp_on=False):
+def update_vlan(name, fabric, vid, description, primary_rack, dhcp_on=False):
     '''
     Update vlan
 
@@ -886,6 +886,7 @@ def update_vlan(name, fabric, vid, description, dhcp_on=False):
         "name": name,
         "dhcp_on": str(dhcp_on),
         "description": description,
+        "primary_rack": primary_rack,
     }
     maas = _create_maas_client()
     fabric_id = get_fabric(fabric)
