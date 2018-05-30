@@ -109,8 +109,9 @@ maas_apache_headers:
   - require:
     - pkg: maas_region_packages
 
-/root/.pgpass:
+Configure /root/.pgpass for MAAS:
   file.managed:
+  - name: /root/.pgpass
   - source: salt://maas/files/pgpass
   - template: jinja
   - user: root
@@ -125,13 +126,22 @@ maas_region_services:
     - cmd: maas_region_syncdb
   - watch:
     - file: /etc/maas/regiond.conf
+  {%- if grains.get('kitchen-test') %}
+  - onlyif: /bin/false
+  {%- endif %}
 
 maas_region_syncdb:
   cmd.run:
   - names:
-    - maas-region syncdb
+    - maas-region syncdb --noinput
   - require:
     - file: /etc/maas/regiond.conf
+  {%- if grains['saltversioninfo'][0] >= 2017 and grains['saltversioninfo'][1] >= 7 %}
+  - retry:
+    attempts: 3
+    interval: 5
+    splay: 5
+  {%- endif %}
 
 maas_set_admin_password:
   cmd.run:
@@ -139,16 +149,27 @@ maas_set_admin_password:
   - creates: /var/lib/maas/.setup_admin
   - require:
     - service: maas_region_services
+  {%- if grains.get('kitchen-test') %}
+  - onlyif: /bin/false
+  {%- endif %}
 
 maas_login_admin:
   cmd.run:
   - name: "maas-region apikey --username {{ region.admin.username }} > /var/lib/maas/.maas_credentials"
+  - require:
+    - cmd: maas_set_admin_password
+  {%- if grains.get('kitchen-test') %}
+  - onlyif: /bin/false
+  {%- endif %}
 
 maas_config:
   module.run:
   - name: maas.process_maas_config
   - require:
     - cmd: maas_login_admin
+  {%- if grains.get('kitchen-test') %}
+  - onlyif: /bin/false
+  {%- endif %}
 
 {%- if region.get('boot_sources', False)  %}
 maas_boot_sources:
@@ -243,6 +264,9 @@ maas_domain:
   - name: maas.process_domain
   - require:
     - module: maas_config
+  {%- if grains.get('kitchen-test') %}
+  - onlyif: /bin/false
+  {%- endif %}
 
 {%- if region.fabrics is defined %}
 {%- for fabric_name, fabric in region.fabrics.iteritems() %}

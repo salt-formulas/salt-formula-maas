@@ -471,6 +471,14 @@ MAAS region service with backup data
             source: cfg01.local
             host: 192.168.0.11
 
+Test pillars
+==============
+
+Mind the postgresql and rsyslog `.sls`. Database and syslog service are required for MAAS to properly install and work.
+
+* https://github.com/salt-formulas/salt-formula-rsyslog/tree/master/tests/pillar
+
+
 Module function's example:
 ==========================
 
