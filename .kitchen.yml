@@ -4,8 +4,7 @@ driver:
   hostname: maas.ci.local
   #socket: tcp://127.0.0.1:2376
   use_sudo: false
-
-
+  run_options: -v /dev/log:/dev/log:ro
 
 provisioner:
   name: salt_solo
@@ -18,21 +17,21 @@ provisioner:
   state_top:
     base:
       "*":
-        - rsyslog
+#        - rsyslog
         - postgresql
         - maas
   pillars:
     top.sls:
       base:
         "*":
-          - rsyslog
+#          - rsyslog
           - postgresql
           - linux
           - maas
 
   pillars-from-files:
     postgresql.sls: tests/pillar/postgresql.sls
-    rsyslog.sls: tests/pillar/rsyslog.sls
+#    rsyslog.sls: tests/pillar/rsyslog.sls
     linux.sls: tests/pillar/linux.sls
 
   grains:

@@ -25,7 +25,9 @@ def __virtual__():
     return 'maasng'
 
 
-def disk_layout_present(hostname, layout_type, root_size=None, root_device=None, volume_group=None, volume_name=None, volume_size=None, disk={}, **kwargs):
+def disk_layout_present(hostname, layout_type, root_size=None, root_device=None,
+                        volume_group=None, volume_name=None, volume_size=None,
+                        disk={}, **kwargs):
     '''
     Ensure that the disk layout does exist
 
@@ -74,7 +76,8 @@ def disk_layout_present(hostname, layout_type, root_size=None, root_device=None,
     return ret
 
 
-def raid_present(hostname, name, level, devices=[], partitions=[], partition_schema={}):
+def raid_present(hostname, name, level, devices=[], partitions=[],
+                 partition_schema={}):
     '''
     Ensure that the raid does exist
 
@@ -346,7 +349,8 @@ def update_vlan(name, fabric, vid, description, primary_rack, dhcp_on=False):
            'comment': 'Module function maasng.update_vlan executed'}
 
     ret["changes"] = __salt__['maasng.update_vlan'](
-        name=name, fabric=fabric, vid=vid, description=description, primary_rack=primary_rack, dhcp_on=dhcp_on)
+        name=name, fabric=fabric, vid=vid, description=description,
+        primary_rack=primary_rack, dhcp_on=dhcp_on)
 
     if "error" in fabric:
         ret['comment'] = "State execution failed for fabric {0}".format(fabric)
@@ -359,4 +363,76 @@ def update_vlan(name, fabric, vid, description, primary_rack, dhcp_on=False):
         ret['comment'] = 'Vlan {0} will be updated for {1}'.format(vid, fabric)
         return ret
 
+    return ret
+
+
+def boot_source_present(url, keyring_file='', keyring_data=''):
+    """
+    Process maas boot-sources: link to maas-ephemeral repo
+
+
+    :param url:               The URL of the BootSource.
+    :param keyring_file:      The path to the keyring file for this BootSource.
+    :param keyring_data:      The GPG keyring for this BootSource, base64-encoded data.
+    """
+    ret = {'name': url,
+           'changes': {},
+           'result': True,
+           'comment': 'boot-source {0} presented'.format(url)}
+
+    if __opts__['test']:
+        ret['result'] = None
+        ret['comment'] = 'boot-source {0} will be updated'.format(url)
+
+    maas_boot_sources = __salt__['maasng.get_boot_source']()
+    # TODO imlpement check and update for keyrings!
+    if url in maas_boot_sources.keys():
+        ret["result"] = True
+        ret["comment"] = 'boot-source {0} alredy exist'.format(url)
+        return ret
+    ret["changes"] = __salt__['maasng.create_boot_source'](url,
+                                                           keyring_filename=keyring_file,
+                                                           keyring_data=keyring_data)
+    return ret
+
+
+def boot_sources_selections_present(bs_url, os, release, arches="*",
+                                    subarches="*", labels="*", wait=True):
+    """
+    Process maas boot-sources selection: set of resource configurathions, to be downloaded from boot-source bs_url.
+
+    :param bs_url:    Boot-source url
+    :param os:        The OS (e.g. ubuntu, centos) for which to import resources.Required.
+    :param release:   The release for which to import resources. Required.
+    :param arches:    The architecture list for which to import resources.
+    :param subarches: The subarchitecture list for which to import resources.
+    :param labels:    The label lists for which to import resources.
+    :param wait:      Initiate import and wait for done.
+
+    """
+    ret = {'name': bs_url,
+           'changes': {},
+           'result': True,
+           'comment': 'boot-source {0} selection present'.format(bs_url)}
+
+    if __opts__['test']:
+        ret['result'] = None
+        ret['comment'] = 'boot-source {0}  selection will be updated'.format(
+            bs_url)
+
+    maas_boot_sources = __salt__['maasng.get_boot_source']()
+    if bs_url not in maas_boot_sources.keys():
+        ret["result"] = False
+        ret[
+            "comment"] = 'Requested boot-source {0} not exist! Unable to proceed selection for it'.format(
+            bs_url)
+        return ret
+
+    ret["changes"] = __salt__['maasng.create_boot_source_selections'](bs_url,
+                                                                      os,
+                                                                      release,
+                                                                      arches=arches,
+                                                                      subarches=subarches,
+                                                                      labels=labels,
+                                                                      wait=wait)
     return ret

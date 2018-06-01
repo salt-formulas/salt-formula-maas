@@ -142,6 +142,9 @@ maas_region_syncdb:
     interval: 5
     splay: 5
   {%- endif %}
+  {%- if grains.get('kitchen-test') %}
+  - onlyif: /bin/false
+  {%- endif %}
 
 maas_set_admin_password:
   cmd.run:
@@ -162,6 +165,22 @@ maas_login_admin:
   - onlyif: /bin/false
   {%- endif %}
 
+maas_wait_for_import_done:
+  module.run:
+  - name: maasng.boot_resources_import
+  - action: 'import'
+  - wait: True
+  - require:
+    - cmd: maas_login_admin
+  {% if region.get('boot_sources_delete_all_others', False)  %}
+    - module: region_boot_sources_delete_all_others
+  {%- endif %}
+  - require_in:
+    - module: maas_config
+  {%- if grains.get('kitchen-test') %}
+  - onlyif: /bin/false
+  {%- endif %}
+
 maas_config:
   module.run:
   - name: maas.process_maas_config
@@ -171,13 +190,60 @@ maas_config:
   - onlyif: /bin/false
   {%- endif %}
 
-{%- if region.get('boot_sources', False)  %}
-maas_boot_sources:
+{##}
+{% if region.get('boot_sources_delete_all_others', False)  %}
+  {# Collect exclude list, all other - will be removed #}
+  {% set exclude_list=[] %}
+  {%- for _, bs in region.boot_sources.iteritems() %} {% if bs.url is defined %} {% do exclude_list.append(bs.url) %} {% endif %} {%- endfor %}
+region_boot_sources_delete_all_others:
   module.run:
-  - name: maas.process_boot_sources
+  - name: maasng.boot_sources_delete_all_others
+  - except_urls: {{ exclude_list }}
   - require:
-    - cmd: maas_set_admin_password
+    - cmd: maas_login_admin
 {%- endif %}
+
+{##}
+{% if region.get('boot_sources', False)  %}
+  {%- for b_name, b_source in region.boot_sources.iteritems() %}
+maas_region_boot_source_{{ b_name }}:
+  maasng.boot_source_present:
+    - url: {{ b_source.url }}
+  {%- if b_source.keyring_data is defined %}
+    - keyring_data: {{ b_source.keyring_data }}
+  {%- endif %}
+  {%- if b_source.keyring_file is defined %}
+    - keyring_file: {{ b_source.keyring_file }}
+  {%- endif %}
+    - require:
+      - cmd: maas_login_admin
+  {%- endfor %}
+{%- endif %}
+
+{##}
+  {% if region.get('boot_sources_selections', False)  %}
+  {%- for bs_name, bs_source in region.boot_sources_selections.iteritems() %}
+maas_region_boot_sources_selection_{{ bs_name }}:
+  maasng.boot_sources_selections_present:
+    - bs_url: {{ bs_source.url }}
+    - os: {{ bs_source.os }}
+    - release: {{ bs_source.release|string }}
+    - arches: {{ bs_source.arches|string }}
+    - subarches: {{ bs_source.subarches|string }}
+    - labels: {{ bs_source.labels }}
+    - require_in:
+      - module: maas_config
+      - module: maas_wait_for_import_done
+    - require:
+      - cmd: maas_login_admin
+  {% if region.get('boot_sources', False)  %}
+    {%- for b_name, _ in region.boot_sources.iteritems() %}
+      - maas_region_boot_source_{{ b_name }}
+    {% endfor %}
+  {%- endif %}
+  {%- endfor %}
+  {%- endif %}
+{##}
 
 {%- if region.get('commissioning_scripts', False)  %}
 /etc/maas/files/commisioning_scripts/:
@@ -202,7 +268,7 @@ maas_commissioning_scripts:
   module.run:
   - name: maas.process_commissioning_scripts
   - require:
-    - module: maas_config
+    - cmd: maas_login_admin
 {%- endif %}
 
 {%- if region.get('fabrics', False)  %}
@@ -210,7 +276,7 @@ maas_fabrics:
   module.run:
   - name: maas.process_fabrics
   - require:
-    - module: maas_config
+    - cmd: maas_login_admin
 {%- endif %}
 
 {%- if region.get('subnets', False)  %}
@@ -218,7 +284,7 @@ maas_subnets:
   module.run:
   - name: maas.process_subnets
   - require:
-    - module: maas_config
+    - cmd: maas_login_admin
     {%- if region.get('fabrics', False)  %}
     - module: maas_fabrics
     {%- endif %}
@@ -229,7 +295,7 @@ maas_devices:
   module.run:
   - name: maas.process_devices
   - require:
-    - module: maas_config
+    - cmd: maas_login_admin
     {%- if region.get('subnets', False)  %}
     - module: maas_subnets
     {%- endif %}
@@ -240,7 +306,7 @@ maas_dhcp_snippets:
   module.run:
   - name: maas.process_dhcp_snippets
   - require:
-    - module: maas_config
+    - cmd: maas_login_admin
 {%- endif %}
 
 {%- if region.get('package_repositories', False)  %}
@@ -248,22 +314,14 @@ maas_package_repositories:
   module.run:
   - name: maas.process_package_repositories
   - require:
-    - module: maas_config
-{%- endif %}
-
-{%- if region.get('boot_resources', False)  %}
-maas_boot_resources:
-  module.run:
-  - name: maas.process_boot_resources
-  - require:
-    - module: maas_config
+    - cmd: maas_login_admin
 {%- endif %}
 
 maas_domain:
   module.run:
   - name: maas.process_domain
   - require:
-    - module: maas_config
+    - cmd: maas_login_admin
   {%- if grains.get('kitchen-test') %}
   - onlyif: /bin/false
   {%- endif %}
@@ -289,7 +347,7 @@ maas_sshprefs:
   module.run:
   - name: maas.process_sshprefs
   - require:
-    - module: maas_config
+    - cmd: maas_login_admin
 {%- endif %}
 
 {%- endif %}

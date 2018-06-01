@@ -982,9 +982,266 @@ def update_vlan(name, fabric, vid, description, primary_rack, dhcp_on=False):
 
     json_res = json.loads(maas.put(
         u'api/2.0/fabrics/{0}/vlans/{1}/'.format(fabric_id, vid), **data).read())
-    print(json_res)
+    LOG.debug("update_vlan:{}".format(json_res))
     result["new"] = "Vlan {0} was updated".format(json_res["name"])
 
     return result
 
 # END NETWORKING
+
+# MAAS CONFIG SECTION
+
+
+def _get_boot_source_id_by_url(url):
+    # FIXME: fix ret\validation
+    try:
+        bs_id = get_boot_source(url=url)["id"]
+    except KeyError:
+        return {"error": "boot-source:{0} not exist!".format(url)}
+    return bs_id
+
+
+def get_boot_source(url=None):
+    """
+    Read a boot source by url. If url not specified - return all.
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.get_boot_source url
+
+    """
+    boot_sources = {}
+    maas = _create_maas_client()
+    json_res = json.loads(maas.get(u'api/2.0/boot-sources/').read() or 'null')
+    for item in json_res:
+        boot_sources[str(item["url"])] = item
+    if url:
+        return boot_sources.get(url, {})
+    return boot_sources
+
+
+def delete_boot_source(url, bs_id=None):
+    """
+    Delete a boot source by url.
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        sal 'maas-node' maasng.delete url
+
+    """
+    result = {}
+    if not bs_id:
+        bs_id = _get_boot_source_id_by_url(url)
+    maas = _create_maas_client()
+    json_res = json.loads(maas.delete(
+        u'/api/2.0/boot-sources/{0}/'.format(bs_id)).read() or 'null')
+    LOG.debug("delete_boot_source:{}".format(json_res))
+    result["new"] = "Boot-resource {0} deleted".format(url)
+    return result
+
+
+def boot_sources_delete_all_others(except_urls=[]):
+    """
+    Delete all boot-sources, except defined in 'except_urls' list.
+    """
+    result = {}
+    maas_boot_sources = get_boot_source()
+    if 0 in [len(except_urls), len(maas_boot_sources)]:
+        result['result'] = None
+        result[
+            "comment"] = "Exclude or maas sources for delete empty. No changes goinng to be."
+        return result
+    for url in maas_boot_sources.keys():
+        if url not in except_urls:
+            LOG.info("Removing boot-source:{}".format(url))
+            boot_resources_import(action='stop_import', wait=True)
+            result["changes"] = delete_boot_source(url)
+    return result
+
+
+def create_boot_source(url, keyring_filename='', keyring_data='', wait=False):
+    """
+    Create and import maas boot-source: link to maas-ephemeral repo
+    Be aware, those step will import resource to rack ctrl, but you also need to import
+    them into the region!
+
+
+    :param url:               The URL of the BootSource.
+    :param keyring_filename:  The path to the keyring file for this BootSource.
+    :param keyring_data:      The GPG keyring for this BootSource, base64-encoded data.
+
+    """
+
+    # TODO: not work with 'update' currently => keyring update may fail.
+    result = {}
+
+    data = {
+        "url": url,
+        "keyring_filename": keyring_filename,
+        "keyring_data": str(keyring_data),
+    }
+
+    maas = _create_maas_client()
+    ipdb.set_trace()
+    if url in get_boot_source():
+        result['result'] = None
+        result["comment"] = "boot resource already exist"
+        return result
+
+    # NOTE: maas.post will return 400, if url already defined.
+    json_res = json.loads(
+        maas.post(u'api/2.0/boot-sources/', None, **data).read())
+    if wait:
+        LOG.debug(
+            "Sleep for 5s,to get MaaS some time to process previous request")
+        time.sleep(5)
+        ret = boot_resources_is_importing(wait=True)
+        if ret is dict:
+            return ret
+    LOG.debug("create_boot_source:{}".format(json_res))
+    result["new"] = "boot resource {0} was created".format(json_res["url"])
+
+    return result
+
+
+def boot_resources_import(action='import', wait=False):
+    """
+    import/stop_import the boot resources.
+
+    :param action:  import\stop_import
+    :param wait:    True\False. Wait till process finished.
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.boot_resources_import action='import'
+
+    """
+    maas = _create_maas_client()
+    # Have no idea why, but usual jsonloads not work here..
+    imp = maas.post(u'api/2.0/boot-resources/', action)
+    if imp.code == 200:
+        LOG.debug('boot_resources_import:{}'.format(imp.readline()))
+        if wait:
+            boot_resources_is_importing(wait=True)
+        return True
+    else:
+        return False
+
+
+def boot_resources_is_importing(wait=False):
+    maas = _create_maas_client()
+    result = {}
+    if wait:
+        started_at = time.time()
+        poll_time = 5
+        timeout = 60 * 15
+        while boot_resources_is_importing(wait=False):
+            c_timeout = timeout - (time.time() - started_at)
+            if c_timeout <= 0:
+                result['result'] = False
+                result["comment"] = "Boot-resources import not finished in time"
+                return result
+            LOG.info(
+                "Waiting boot-resources import done\n"
+                "sleep for:{}s "
+                "Left:{}/{}s".format(poll_time, round(c_timeout), timeout))
+            time.sleep(poll_time)
+        return json.loads(
+            maas.get(u'api/2.0/boot-resources/', 'is_importing').read())
+    else:
+        return json.loads(
+            maas.get(u'api/2.0/boot-resources/', 'is_importing').read())
+
+#####
+#def boot_sources_selections_delete_all_others(except_urls=[]):
+#    """
+#    """
+#    result = {}
+#    return result
+
+
+def is_boot_source_selections_in(dict1, list1):
+    """
+    Check that requested boot-selection already in maas bs selections, if True- return bss id.
+    # FIXME: those hack check doesn't look good.
+    """
+    for bs in list1:
+        same = set(dict1.keys()) & set(bs.keys())
+        if all(elem in same for elem in
+               ['os', 'release', 'arches', 'subarches', 'labels']):
+            LOG.debug(
+                "boot-selection in maas:{0}\nlooks same to requested:{1}".format(
+                    bs, dict1))
+            return bs['id']
+    return False
+
+
+def get_boot_source_selections(bs_url):
+    """
+    Get boot-source selections.
+    """
+    # check for key_error!
+    bs_id = _get_boot_source_id_by_url(bs_url)
+    maas = _create_maas_client()
+    json_res = json.loads(
+        maas.get(u'/api/2.0/boot-sources/{0}/selections/'.format(bs_id)).read())
+    LOG.debug(
+        "get_boot_source_selections for url:{} \n{}".format(bs_url, json_res))
+    return json_res
+
+
+def create_boot_source_selections(bs_url, os, release, arches="*",
+                                  subarches="*", labels="*", wait=True):
+    """
+         Create a new boot source selection for bs_url.
+        :param os:        The OS (e.g. ubuntu, centos) for which to import resources.Required.
+        :param release:   The release for which to import resources. Required.
+        :param arches:    The architecture list for which to import resources.
+        :param subarches: The subarchitecture list for which to import resources.
+        :param labels:    The label lists for which to import resources.
+    """
+
+    result = {}
+
+    data = {
+        "os": os,
+        "release": release,
+        "arches": arches,
+        "subarches": subarches,
+        "labels": labels,
+    }
+
+    maas = _create_maas_client()
+    bs_id = _get_boot_source_id_by_url(bs_url)
+    # TODO add pre-create verify
+    maas_bs_s = get_boot_source_selections(bs_url)
+    if is_boot_source_selections_in(data, maas_bs_s):
+        result["result"] = True
+        result[
+            "comment"] = 'Requested boot-source selection for {0} already exist.'.format(
+            bs_url)
+        return result
+
+    # NOTE: maas.post will return 400, if url already defined.
+    json_res = json.loads(
+        maas.post(u'api/2.0/boot-sources/{0}/selections/'.format(bs_id), None,
+                  **data).read())
+    LOG.debug("create_boot_source_selections:{}".format(json_res))
+    if wait:
+        LOG.debug(
+            "Sleep for 5s,to get MaaS some time to process previous request")
+        time.sleep(5)
+        ret = boot_resources_import(action='import', wait=True)
+        if ret is dict:
+            return ret
+    result["new"] = "boot-source selection for {0} was created".format(bs_url)
+
+    return result
+
+# END MAAS CONFIG SECTION

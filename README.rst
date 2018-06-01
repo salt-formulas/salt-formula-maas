@@ -64,19 +64,19 @@ Single MAAS region service [single UI/API]
           description: Test snippet
           enabled: true
           subnet: subnet1
+      boot_sources_delete_all_others: true
       boot_sources:
-        maas_mirror:
-          url: http://images.maas.io/ephemeral-v3/daily/
+        resources_mirror:
+          url: http://images.maas.io/ephemeral-v3/
           keyring_file: /usr/share/keyrings/ubuntu-cloudimage-keyring.gpg
-        local_mirror:
-          url: http://127.0.0.1/maas/images/ephemeral-v3/daily
-          keyring_file: /usr/share/keyrings/ubuntu-cloudimage-keyring.gpg
-      boot_resources:
-        bootscript1:
-          title: bootscript
-          architecture: amd64/generic
-          filetype: tgz
-          content: /srv/salt/reclass/nodes/path_to_file
+      boot_sources_selections:
+        xenial:
+          url: "http://images.maas.io/ephemeral-v3/" # should be same in boot_sources, or other already defined.
+          os: "ubuntu"
+          release: "xenial"
+          arches: "amd64"
+          subarches: '"*"'
+          labels: '"*"'
       package_repositories:
         Saltstack:
           url: http://repo.saltstack.com/apt/ubuntu/14.04/amd64/2016.3/
