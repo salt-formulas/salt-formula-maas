@@ -1,0 +1,86 @@
+---
+driver:
+  name: docker
+  hostname: maas.ci.local
+  #socket: tcp://127.0.0.1:2376
+  use_sudo: false
+
+
+
+provisioner:
+  name: salt_solo
+  salt_install: bootstrap
+  salt_bootstrap_url: https://bootstrap.saltstack.com
+  salt_version: latest
+  require_chef: false
+  formula: maas
+  log_level: info
+  state_top:
+    base:
+      "*":
+        - rsyslog
+        - postgresql
+        - maas
+  pillars:
+    top.sls:
+      base:
+        "*":
+          - rsyslog
+          - postgresql
+          - linux
+          - maas
+
+  pillars-from-files:
+    postgresql.sls: tests/pillar/postgresql.sls
+    rsyslog.sls: tests/pillar/rsyslog.sls
+    linux.sls: tests/pillar/linux.sls
+
+  grains:
+    noservices: False
+    kitchen-test: True
+
+  dependencies:
+    - name: postgresql
+      repo: git
+      source: https://github.com/salt-formulas/salt-formula-postgresql
+    - name: rsyslog
+      repo: git
+      source: https://github.com/salt-formulas/salt-formula-rsyslog
+
+
+platforms:
+  - name: <%=ENV['PLATFORM'] ||  'saltstack-ubuntu-xenial-salt-stable' %>
+    driver_config:
+      image: <%=ENV['PLATFORM'] || 'epcim/salt-formulas:saltstack-ubuntu-xenial-salt-stable'%>
+      platform: ubuntu
+
+
+verifier:
+  name: inspec
+  sudo: true
+
+
+suites:
+
+
+  - name: maas_cluster
+    provisioner:
+      pillars-from-files:
+        maas.sls: tests/pillar/maas_cluster.sls
+
+  #- name: disk_layout
+    #provisioner:
+      #pillars-from-files:
+        #maas.sls: tests/pillar/disk_layout.sls
+
+  #- name: maas_mirror
+    #provisioner:
+      #pillars-from-files:
+        #maas.sls: tests/pillar/maas_mirror.sls
+
+  #- name: maas_region
+    #provisioner:
+      #pillars-from-files:
+        #maas.sls: tests/pillar/maas_region.sls
+
+# vim: ft=yaml sw=2 ts=2 sts=2 tw=125

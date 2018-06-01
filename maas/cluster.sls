@@ -62,5 +62,8 @@ maas_cluster_services:
     - file: /etc/maas/rackd.conf
   - watch:
     - file: /etc/maas/rackd.conf
+  {%- if grains.get('kitchen-test') %}
+  - onlyif: /bin/false
+  {%- endif %}
 
 {%- endif %}
