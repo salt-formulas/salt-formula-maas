@@ -29,6 +29,7 @@ Debian:
 Debian:
   pkgs:
   - simplestreams
+  - ubuntu-cloudimage-keyring
 {%- endload %}
 
 {%- set mirror = salt['grains.filter_by'](mirror_defaults, merge=salt['pillar.get']('maas:mirror', {})) %}
