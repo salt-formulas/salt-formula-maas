@@ -225,6 +225,7 @@ Size specification with `%` char used is not yet supported
 
 
 .. code-block:: yaml
+
   maas:
     region:
       machines:
@@ -405,7 +406,7 @@ delete the partition and then recreated. That fails as maas rejects remove parti
 
 
 
-Setup image mirror
+Setup image mirror (Maas boot resources,)
 
 .. code-block:: yaml
 
@@ -413,16 +414,23 @@ Setup image mirror
     mirror:
       enabled: true
       image:
-        release:
+        sections:
+          bootloaders:
+            keyring: /usr/share/keyrings/ubuntu-cloudimage-keyring.gpg
+            upstream: http://images.maas.io/ephemeral-v3/daily/
+            local_dir: /var/www/html/maas/images/ephemeral-v3/daily
+            count: 1
+            # i386 need for pxe
+            filters: ['arch~(i386|amd64)', 'os~(grub*|pxelinux)']
           xenial:
-          keyring: /usr/share/keyrings/ubuntu-cloudimage-keyring.gpg
-          upstream: http://images.maas.io/ephemeral-v3/daily/
-          local_dir: /var/www/html/maas/images/ephemeral-v3/daily
-          arch: amd64
-          subarch: 'generic|hwe-t'
+            keyring: /usr/share/keyrings/ubuntu-cloudimage-keyring.gpg
+            upstream: http://images.maas.io/ephemeral-v3/daily/
+            local_dir: /var/www/html/maas/images/ephemeral-v3/daily
+            count: 1
+            filters: ['release~(xenial)', 'arch~(amd64)', 'subarch~(generic|hwe-16.04$|ga-16.04)']
           count: 1
 
-Usage of local repos
+Usage of local deb repos
 
 .. code-block:: yaml
 
@@ -464,6 +472,7 @@ Single MAAS cluster service [multiple racks]
 MAAS region service with backup data
 
 .. code-block:: yaml
+
     maas:
       region:
         database:
