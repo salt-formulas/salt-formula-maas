@@ -22,7 +22,7 @@ late_commands:
 {% set salt_repo_key = salt['hashutil.base64_b64encode'](cluster.saltstack_repo_key) %}
   apt_00_set_gpg: ["curtin", "in-target", "--", "sh", "-c", "echo '{{salt_repo_key}}' | base64 -d | apt-key add -"]
 {%- endif %}
-{#- NOTE: Re-use amd64 repos on arm64 since most packages are arch independent -#}
+{#- NOTE: Re-use amd64 repos on arm64 since most packages are arch independent #}
   apt_01_set_repo: ["curtin", "in-target", "--", "sh", "-c", "echo 'deb [arch=amd64] {{ cluster.saltstack_repo_xenial }}' >> /etc/apt/sources.list"]
 {% raw %}
   apt_03_update: ["curtin", "in-target", "--", "apt-get", "update"]
