@@ -8,11 +8,20 @@ maas_mirror_packages:
   pkg.installed:
     - names: {{ mirror.pkgs }}
 
-{%- for release_name, release in mirror.image.release.iteritems() %}
+{%- for section_name, section in mirror.image.sections.iteritems() %}
 
-mirror_image_{{ release_name }}:
+mirror_image_{{ section_name }}:
   cmd.run:
-  - name: "sstream-mirror --keyring={{ release.keyring }} {{ release.upstream }} {{ release.local_dir }} {%- if release.get('arch') %} 'arch={{ release.arch }}'{%- endif %} {%- if release.get('subarch') %} 'subarch~({{ release.subarch }})'{%- endif %} 'release~({{ release_name }})' {%- if release.get('count') %} --max={{ release.count }}{%- endif %}"
+  - name: "sstream-mirror --keyring={{ section.keyring }} {{ section.upstream }} {{ section.local_dir }}
+    {%- if section.get('arch') %}
+      'arch={{ section.arch }}'
+    {%- endif %}
+    {%- if section.get('filters') %}
+     {% for item in section.filters %} '{{ item }}' {%- endfor %}
+    {%- endif %}
+    {%- if section.get('count') %}
+      --max={{ section.count }}
+    {%- endif %}"
   - require:
     - pkg: maas_mirror_packages
 
@@ -21,3 +30,4 @@ mirror_image_{{ release_name }}:
 {%- endif %}
 
 {%- endif %}
+
