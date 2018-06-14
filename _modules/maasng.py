@@ -1086,7 +1086,6 @@ def create_boot_source(url, keyring_filename='', keyring_data='', wait=False):
     }
 
     maas = _create_maas_client()
-    ipdb.set_trace()
     if url in get_boot_source():
         result['result'] = None
         result["comment"] = "boot resource already exist"
