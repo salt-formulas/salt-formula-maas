@@ -169,6 +169,39 @@ Single MAAS region service [single UI/API]
        sshprefs:
         - 'ssh-rsa ASD.........dfsadf blah@blah'
 
+Multiple ip ranges for one particular subnet.
+
+.. code-block:: yaml
+
+  maas:
+    region:
+      subnets:
+        Subnet1:
+          cidr: 10.10.0.0/16
+          fabric: fabric-5
+          gateway_ip: 10.10.0.1
+          iprange:
+            start: 10.10.191.241
+            end: 10.10.255.244
+            type: reserved
+        Subnet2:
+          cidr: 130.10.0.0/16
+          fabric: fabric-6
+          gateway_ip: 130.10.0.1
+          multiple: True
+          iprange:
+            range1:
+              start: 130.10.0.10
+              end: 130.10.0.15
+              type: dynamic
+              comment: 'Coment 1'
+            range2:
+              start: 130.10.0.16
+              end: 130.10.0.20
+              type: reserved
+              comment: 'Comment 2'
+
+
 Update Vlan
 
 NOTE: Vid 0 has default name untagged in MaaS UI

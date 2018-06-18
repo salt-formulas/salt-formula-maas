@@ -1,4 +1,3 @@
-
 import logging
 from salt.exceptions import CommandExecutionError, SaltInvocationError
 
@@ -67,7 +66,8 @@ def disk_layout_present(hostname, layout_type, root_size=None, root_device=None,
             hostname, layout_type, root_size, root_device, volume_group, volume_name, volume_size)
 
     elif layout_type == "custom":
-        ret["changes"] = __salt__['maasng.update_disk_layout'](hostname, layout_type)
+        ret["changes"] = __salt__[
+            'maasng.update_disk_layout'](hostname, layout_type)
 
     else:
         ret["comment"] = "Not supported layout provided. Choose flat or lvm"
@@ -435,4 +435,72 @@ def boot_sources_selections_present(bs_url, os, release, arches="*",
                                                                       subarches=subarches,
                                                                       labels=labels,
                                                                       wait=wait)
+    return ret
+
+
+def iprange_present(name, type_range, start_ip, end_ip, comment):
+    '''
+
+    :param name: Name of iprange
+    :param type_range: Type of iprange
+    :param start_ip: Start ip of iprange
+    :param end_ip: End ip of iprange
+    :param comment: Comment for specific iprange
+
+    '''
+
+    ret = {'name': name,
+           'changes': {},
+           'result': True,
+           'comment': 'Module function maasng.iprange_present executed'}
+
+    start = __salt__['maasng.get_startip'](start_ip)
+    if 'start_ip' in start.keys():
+        if start["start_ip"] == start_ip:
+            ret['comment'] = 'Iprange {0} already exist.'.format(name)
+            return ret
+
+    if __opts__['test']:
+        ret['result'] = None
+        ret['comment'] = 'Ip range {0} will be created with start ip: {1} and end ip: {2} and type {3}'.format(
+            name, start_ip, end_ip, type_range)
+        return ret
+
+    ret["changes"] = __salt__['maasng.create_iprange'](
+        type_range=type_range, start_ip=start_ip, end_ip=end_ip, comment=comment)
+
+    return ret
+
+
+def subnet_present(cidr, name, fabric, gateway_ip):
+    '''
+
+    :param cidr: Cidr for subnet
+    :param name: Name of subnet
+    :param fabric: Name of fabric for subnet
+    :param gateway_ip: gateway_ip
+
+    '''
+
+    ret = {'name': name,
+           'changes': {},
+           'result': True,
+           'comment': 'Module function maasng.subnet_present executed'}
+
+    subnet = __salt__['maasng.get_subnet'](name)
+    if 'name' in subnet.keys():
+        if subnet['name'] == name:
+            ret['comment'] = 'Subnet {0} already exist for fabric {1}'.format(
+                name, fabric)
+            return ret
+
+    if __opts__['test']:
+        ret['result'] = None
+        ret['comment'] = 'Subnet {0} will be created for {1}'.format(
+            name, fabric)
+        return ret
+
+    ret["changes"] = __salt__['maasng.create_subnet'](
+        cidr=cidr, name=name, fabric=fabric, gateway_ip=gateway_ip)
+
     return ret

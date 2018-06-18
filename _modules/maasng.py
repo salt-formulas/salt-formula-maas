@@ -99,8 +99,8 @@ def _get_volume_id_by_name(hostname, volume_name, volume_group, maas_volname=Tru
 
     if not maas_volname:
         # MAAS-like name
-        volume_name = str("%s-%s" % (volume_group,volume_name))
-    ##TODO validation
+        volume_name = str("%s-%s" % (volume_group, volume_name))
+    # TODO validation
     return get_volumes(hostname, volume_group)[volume_name]["id"]
 
 
@@ -233,8 +233,9 @@ def list_raids(hostname):
     raids = {}
     maas = _create_maas_client()
     system_id = get_machine(hostname)["system_id"]
-    #TODO validation
-    json_res = json.loads(maas.get(u"api/2.0/nodes/{0}/raids/".format(system_id)).read())
+    # TODO validation
+    json_res = json.loads(
+        maas.get(u"api/2.0/nodes/{0}/raids/".format(system_id)).read())
     LOG.debug('list_raids:{} {}'.format(system_id, json_res))
     for item in json_res:
         raids[item["name"]] = item
@@ -271,11 +272,12 @@ def delete_raid(hostname, raid_name):
         salt-call maasng.delete_raid server_hostname raid_name
     """
     result = {}
-    maas=_create_maas_client()
+    maas = _create_maas_client()
     system_id = get_machine(hostname)["system_id"]
     raid_id = _get_raid_id_by_name(hostname, raid_name)
-    LOG.debug('delete_raid: {} {}'.format(system_id,raid_id))
-    maas.delete(u"api/2.0/nodes/{0}/raid/{1}/".format(system_id, raid_id)).read()
+    LOG.debug('delete_raid: {} {}'.format(system_id, raid_id))
+    maas.delete(
+        u"api/2.0/nodes/{0}/raid/{1}/".format(system_id, raid_id)).read()
 
     result["new"] = "Raid {0} deleted".format(raid_name)
     return result
@@ -497,7 +499,7 @@ def delete_partition_by_id(hostname, disk, partition_id):
 # DISK LAYOUT
 
 
-def drop_storage_schema(hostname,disk=None):
+def drop_storage_schema(hostname, disk=None):
     """
     #1. Drop lv
     #2. Drop vg
@@ -507,9 +509,10 @@ def drop_storage_schema(hostname,disk=None):
 
     if __opts__['test']:
         ret['result'] = None
-        ret['comment'] = 'Storage schema on {0} will be removed'.format(hostname)
+        ret['comment'] = 'Storage schema on {0} will be removed'.format(
+            hostname)
         return ret
-    #TODO validation if exists
+    # TODO validation if exists
     vgs = list_volume_groups(hostname)
     for vg in vgs:
         delete_volume_group(hostname, vg)
@@ -523,7 +526,8 @@ def drop_storage_schema(hostname,disk=None):
         partitions = __salt__['maasng.list_partitions'](hostname, block_d)
         for partition_name, partition in partitions.iteritems():
             LOG.info('delete partition:\n{}'.format(partition))
-            __salt__['maasng.delete_partition_by_id'](hostname, block_d, partition["id"])
+            __salt__['maasng.delete_partition_by_id'](
+                hostname, block_d, partition["id"])
 
 
 def update_disk_layout(hostname, layout, root_size=None, root_device=None, volume_group=None, volume_name=None, volume_size=None):
@@ -590,6 +594,7 @@ def update_disk_layout(hostname, layout, root_size=None, root_device=None, volum
 
 # END DISK LAYOUT
 # LVM
+
 
 def list_volume_groups(hostname):
     """
@@ -709,10 +714,11 @@ def delete_volume_group(hostname, name):
 
     vg_id = str(_get_volume_group_id_by_name(hostname, name))
     for vol in get_volumes(hostname, name):
-        delete_volume(hostname,vol,name)
+        delete_volume(hostname, vol, name)
 
-    #TODO validation
-    json_res = json.loads(maas.delete(u"api/2.0/nodes/{0}/volume-group/{1}/".format(system_id, vg_id)).read() or 'null')
+    # TODO validation
+    json_res = json.loads(maas.delete(
+        u"api/2.0/nodes/{0}/volume-group/{1}/".format(system_id, vg_id)).read() or 'null')
     LOG.info(json_res)
 
     return True
@@ -754,7 +760,8 @@ def create_volume(hostname, volume_name, volume_group, size, fs_type=None, mount
     LOG.info(json_res)
 
     if fs_type != None or mount != None:
-        ret = create_volume_filesystem(hostname, volume_group + "-" + volume_name, fs_type, mount)
+        ret = create_volume_filesystem(
+            hostname, volume_group + "-" + volume_name, fs_type, mount)
 
     return True
 
@@ -774,12 +781,13 @@ def delete_volume(hostname, volume_name, volume_group):
         salt-call maasng.delete_volume server_hostname volume_name volume_group
     """
 
-    maas=_create_maas_client()
+    maas = _create_maas_client()
     system_id = get_machine(hostname)["system_id"]
     LOG.debug('delete_volume:{}'.format(system_id))
 
     volume_group_id = str(_get_volume_group_id_by_name(hostname, volume_group))
-    volume_id = str(_get_volume_id_by_name(hostname, volume_name, volume_group))
+    volume_id = str(_get_volume_id_by_name(
+        hostname, volume_name, volume_group))
 
     if None in [volume_group_id, volume_id]:
         return False
@@ -788,8 +796,9 @@ def delete_volume(hostname, volume_name, volume_group):
         "id": volume_id,
     }
 
-    #TODO validation
-    json_res = json.loads(maas.post(u"api/2.0/nodes/{0}/volume-group/{1}/".format(system_id, volume_group_id), "delete_logical_volume", **data).read() or 'null')
+    # TODO validation
+    json_res = json.loads(maas.post(u"api/2.0/nodes/{0}/volume-group/{1}/".format(
+        system_id, volume_group_id), "delete_logical_volume", **data).read() or 'null')
     return True
 
 
@@ -798,7 +807,8 @@ def get_volumes(hostname, vg_name):
     Get list of volumes in volume group.
     """
     volumes = {}
-    _volumes = list_volume_groups(hostname)[vg_name].get('logical_volumes', False)
+    _volumes = list_volume_groups(
+        hostname)[vg_name].get('logical_volumes', False)
     if _volumes:
         for item in _volumes:
             volumes[item["name"]] = item
@@ -897,7 +907,7 @@ def create_fabric(name):
 
     maas = _create_maas_client()
     json_res = json.loads(maas.post(u"api/2.0/fabrics/", None, **data).read())
-    LOG.info(json_res)
+    LOG.debug("crete_fabric:{}".format(json_res))
     result["new"] = "Fabrics {0} created".format(json_res["name"])
     return result
 
@@ -933,7 +943,7 @@ def list_vlans(fabric):
     """
     vlans = {}
     maas = _create_maas_client()
-    fabric_id = get_fabric(fabric)
+    fabric_id = get_fabricid(fabric)
 
     json_res = json.loads(
         maas.get(u'api/2.0/fabrics/{0}/vlans/'.format(fabric_id)).read())
@@ -943,7 +953,7 @@ def list_vlans(fabric):
     return vlans
 
 
-def get_fabric(fabric):
+def get_fabricid(fabric):
     """
     Get id for specific fabric
 
@@ -951,7 +961,7 @@ def get_fabric(fabric):
 
     .. code-block:: bash
 
-        salt-call maasng.get_fabric fabric_name
+        salt 'maas-node' maasng.get_fabricid fabric_name
     """
     try:
         return list_fabric()[fabric]['id']
@@ -962,11 +972,8 @@ def get_fabric(fabric):
 def update_vlan(name, fabric, vid, description, primary_rack, dhcp_on=False):
     """
     Update vlan
-
     CLI Example:
-
     .. code-block:: bash
-
         salt 'maas-node' maasng.update_vlan name, fabric, vid, description, dhcp_on
     """
     result = {}
@@ -978,7 +985,7 @@ def update_vlan(name, fabric, vid, description, primary_rack, dhcp_on=False):
         "primary_rack": primary_rack,
     }
     maas = _create_maas_client()
-    fabric_id = get_fabric(fabric)
+    fabric_id = get_fabricid(fabric)
 
     json_res = json.loads(maas.put(
         u'api/2.0/fabrics/{0}/vlans/{1}/'.format(fabric_id, vid), **data).read())
@@ -987,6 +994,164 @@ def update_vlan(name, fabric, vid, description, primary_rack, dhcp_on=False):
 
     return result
 
+
+def list_subnets():
+    """
+    Get list of subnet from maas server
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.list_subnet
+    """
+    subnets = {}
+    maas = _create_maas_client()
+    json_res = json.loads(maas.get(u'api/2.0/subnets/').read())
+    for item in json_res:
+        subnets[item["name"]] = item
+    return subnets
+
+
+def create_subnet(cidr, name, fabric, gateway_ip):
+    """
+    Create subnet
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.create_subnet cidr, name, fabric, gateway_ip
+    """
+
+    fabric_id = get_fabricid(fabric)
+    result = {}
+
+    data = {
+        "cidr": cidr,
+        "name": name,
+        "fabric": str(fabric_id),
+        "gateway_ip": gateway_ip,
+    }
+    maas = _create_maas_client()
+
+    json_res = json.loads(maas.post(u"api/2.0/subnets/", None, **data).read())
+    LOG.debug("create_subnet:{}".format(json_res))
+    result["new"] = "Subnet {0} with CIDR {1} and gateway {2} was created".format(
+        name, cidr, gateway_ip)
+
+    return result
+
+
+def get_subnet(subnet):
+    """
+    Get details for specific subnet
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.get_subnet subnet_name
+    """
+    try:
+        return list_subnet()[subnet]
+    except KeyError:
+        return {"error": "Subnet not found on MaaS server"}
+
+
+def get_subnetid(subnet):
+    """
+    Get id for specific subnet
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.get_subnetid subnet_name
+    """
+    try:
+        return list_subnet()[subnet]['id']
+    except KeyError:
+        return {"error": "Subnet not found on MaaS server"}
+
+
+def list_ipranges():
+    """
+    Get list of all ipranges from maas server
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.list_ipranges
+    """
+    ipranges = {}
+    maas = _create_maas_client()
+    json_res = json.loads(maas.get(u'api/2.0/ipranges/').read())
+    for item in json_res:
+        ipranges[item["start_ip"]] = item
+    return ipranges
+
+
+def create_iprange(type_range, start_ip, end_ip, comment):
+    """
+    Create ip range
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.create_iprange type, start ip, end ip, comment
+    """
+    result = {}
+
+    data = {
+        "type": type_range,
+        "start_ip": start_ip,
+        "end_ip": end_ip,
+        "comment": comment,
+    }
+    maas = _create_maas_client()
+
+    json_res = json.loads(maas.post(u"api/2.0/ipranges/", None, **data).read())
+
+    LOG.debug("create_iprange:{}".format(json_res))
+    result["new"] = "Iprange with type {0}, start ip {1}, end ip {2}, was created".format(
+        type_range, start_ip, end_ip)
+
+    return result
+
+
+def get_iprangeid(start_ip):
+    """
+    Get id for ip range from maas server
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.get_iprangeid start_ip
+    """
+    try:
+        return list_ipranges()[start_ip]['id']
+    except KeyError:
+        return {"error": "Ip range not found on MaaS server"}
+
+
+def get_startip(start_ip):
+    """
+    Get start ip for ip range
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.get_startip start ip
+    """
+    try:
+        return list_ipranges()[start_ip]
+    except KeyError:
+        return {"error": "Ip range not found on MaaS server"}
 # END NETWORKING
 
 # MAAS CONFIG SECTION
@@ -1158,7 +1323,7 @@ def boot_resources_is_importing(wait=False):
             maas.get(u'api/2.0/boot-resources/', 'is_importing').read())
 
 #####
-#def boot_sources_selections_delete_all_others(except_urls=[]):
+# def boot_sources_selections_delete_all_others(except_urls=[]):
 #    """
 #    """
 #    result = {}
