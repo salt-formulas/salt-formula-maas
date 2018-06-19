@@ -399,10 +399,12 @@ def boot_source_present(url, keyring_file='', keyring_data=''):
 def boot_sources_selections_present(bs_url, os, release, arches="*",
                                     subarches="*", labels="*", wait=True):
     """
-    Process maas boot-sources selection: set of resource configurathions, to be downloaded from boot-source bs_url.
+    Process maas boot-sources selection: set of resource configurathions,
+    to be downloaded from boot-source bs_url.
 
     :param bs_url:    Boot-source url
-    :param os:        The OS (e.g. ubuntu, centos) for which to import resources.Required.
+    :param os:        The OS (e.g. ubuntu, centos) for which to import
+                      resources.Required.
     :param release:   The release for which to import resources. Required.
     :param arches:    The architecture list for which to import resources.
     :param subarches: The subarchitecture list for which to import resources.
@@ -424,15 +426,16 @@ def boot_sources_selections_present(bs_url, os, release, arches="*",
     if bs_url not in maas_boot_sources.keys():
         ret["result"] = False
         ret[
-            "comment"] = 'Requested boot-source {0} not exist! Unable to proceed selection for it'.format(
+            "comment"] = 'Requested boot-source {0} not exist! Unable' \
+                         'to proceed selection for it'.format(
             bs_url)
         return ret
 
-    ret["changes"] = __salt__['maasng.create_boot_source_selections'](bs_url,
-                                                                      os,
-                                                                      release,
-                                                                      arches=arches,
-                                                                      subarches=subarches,
-                                                                      labels=labels,
-                                                                      wait=wait)
+    ret = __salt__['maasng.create_boot_source_selections'](bs_url,
+                                                           os,
+                                                           release,
+                                                           arches=arches,
+                                                           subarches=subarches,
+                                                           labels=labels,
+                                                           wait=wait)
     return ret

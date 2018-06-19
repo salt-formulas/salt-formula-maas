@@ -165,7 +165,18 @@ maas_login_admin:
   - onlyif: /bin/false
   {%- endif %}
 
-maas_wait_for_import_done:
+maas_wait_for_racks_import_done:
+  module.run:
+  - name: maasng.sync_and_wait_bs_to_all_racks
+  - require:
+    - cmd: maas_login_admin
+  - require_in:
+    - module: maas_config
+  {%- if grains.get('kitchen-test') %}
+  - onlyif: /bin/false
+  {%- endif %}
+
+maas_wait_for_region_import_done:
   module.run:
   - name: maasng.boot_resources_import
   - action: 'import'
@@ -176,7 +187,7 @@ maas_wait_for_import_done:
     - module: region_boot_sources_delete_all_others
   {%- endif %}
   - require_in:
-    - module: maas_config
+    - module: maas_wait_for_racks_import_done
   {%- if grains.get('kitchen-test') %}
   - onlyif: /bin/false
   {%- endif %}
@@ -233,7 +244,7 @@ maas_region_boot_sources_selection_{{ bs_name }}:
     - labels: {{ bs_source.labels }}
     - require_in:
       - module: maas_config
-      - module: maas_wait_for_import_done
+      - module: maas_wait_for_racks_import_done
     - require:
       - cmd: maas_login_admin
   {% if region.get('boot_sources', False)  %}

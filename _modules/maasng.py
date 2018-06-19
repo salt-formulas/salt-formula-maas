@@ -1206,7 +1206,7 @@ def create_boot_source_selections(bs_url, os, release, arches="*",
         :param labels:    The label lists for which to import resources.
     """
 
-    result = {}
+    result = { "result" : True, 'name' : bs_url, 'changes' : None }
 
     data = {
         "os": os,
@@ -1228,10 +1228,29 @@ def create_boot_source_selections(bs_url, os, release, arches="*",
         return result
 
     # NOTE: maas.post will return 400, if url already defined.
-    json_res = json.loads(
-        maas.post(u'api/2.0/boot-sources/{0}/selections/'.format(bs_id), None,
-                  **data).read())
+    # Also, maas need's some time to import info about stream.
+    # unfortunatly, maas don't have any call to check stream-import-info - so, we need to implement
+    # at least simple retry ;(
+    json_res = False
+    poll_time = 5
+    for i in range(0,5):
+        try:
+            json_res = json.loads(
+                maas.post(u'api/2.0/boot-sources/{0}/selections/'.format(bs_id), None,
+                          **data).read())
+        except Exception as inst:
+            m = inst.readlines()
+            LOG.warning("boot_source_selections catch error during processing. Most-probably, streams not imported yet.Sleep:{}s\nRetry:{}/5".format(poll_time,i))
+            LOG.warning("Message:{0}".format(m))
+            time.sleep(poll_time)
+            continue
+        break
     LOG.debug("create_boot_source_selections:{}".format(json_res))
+    if not json_res:
+        result["result"] = False
+        result[
+            "comment"] = 'Failed to create requested boot-source selection for {0}.'.format(bs_url)
+        return result
     if wait:
         LOG.debug(
             "Sleep for 5s,to get MaaS some time to process previous request")
@@ -1239,8 +1258,176 @@ def create_boot_source_selections(bs_url, os, release, arches="*",
         ret = boot_resources_import(action='import', wait=True)
         if ret is dict:
             return ret
-    result["new"] = "boot-source selection for {0} was created".format(bs_url)
+    result["comment"] = "boot-source selection for {0} was created".format(bs_url)
+    result["new"] = data
 
     return result
 
 # END MAAS CONFIG SECTION
+
+# RACK CONTROLLERS SECTION
+
+
+def get_rack(hostname):
+    """
+    Get information about specified rackd
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt-call maasng.get_rack rack_hostname
+    """
+    try:
+        return list_racks()[hostname]
+    except KeyError:
+        return {"error": "rack:{} not found on MaaS server".format(hostname)}
+
+
+def list_racks():
+    """
+    Get list of all rack controllers from maas server
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt-call maasng.list_racks
+    """
+    racks = {}
+    maas = _create_maas_client()
+    json_res = json.loads(
+        maas.get(u"/api/2.0/rackcontrollers/").read() or 'null')
+    for item in json_res:
+        racks[item["hostname"]] = item
+    return racks
+
+
+def sync_bs_to_rack(hostname=None):
+    """
+    Sync RACK boot-sources with REGION. If no hostname probided  - sync to all.
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt-call maasng.sync_bs_to_rack rack_hostname
+    """
+    ret = {}
+    maas = _create_maas_client()
+    if not hostname:
+        LOG.info("boot-sources sync initiated for ALL Rack's")
+        # Convert to json-like format
+        json_res = json.loads('["{0}"]'.format(
+            maas.post(u"/api/2.0/rackcontrollers/",
+                      'import_boot_images').read()))
+        LOG.debug("sync_bs_to_rack:{}".format(json_res))
+        ret['result'] = True
+        ret['comment'] = "boot-sources sync initiated for ALL Rack's"
+        return ret
+    LOG.info("boot-sources sync initiated for RACK:{0}".format(hostname))
+    # Convert to json-like format
+    json_res = json.loads('["{0}"]'.format(maas.post(
+        u"/api/2.0/rackcontrollers/{0}/".format(
+            get_rack(hostname)['system_id']),
+        'import_boot_images').read()))
+    LOG.debug("sync_bs_to_rack:{}".format(json_res))
+    ret['result'] = True
+    ret['comment'] = "boot-sources sync initiated for {0} Rack's".format(
+        hostname)
+    return
+
+
+def rack_list_boot_imgs(hostname):
+    ret = {}
+    maas = _create_maas_client()
+    LOG.debug("rack_list_boot_imgs:{}".format(hostname))
+    ret = json.loads(maas.get(u"/api/2.0/rackcontrollers/{0}/".format(
+        get_rack(hostname)['system_id']), 'list_boot_images').read() or 'null')
+    return ret
+
+
+def is_rack_synced(hostname):
+    rez = rack_list_boot_imgs(hostname)['status']
+    if rez == 'synced':
+        return True
+    return False
+
+# TODO do we actually need _exact_ check per-pack?
+# def wait_for_images_on_rack(hostname):
+#
+#    """
+#    WA function, to be able check that RACK actually done SYNC images
+#    for REQUIRED images at least.
+#    Required image to be fetched from
+#    reclass:maas:region:boot_sources_selections:[keys]:os/release formation
+#
+#    CLI Example:
+#
+#    .. code-block:: bash
+#
+#        salt-call maasng.wait_for_sync_bs_to_rack rack_hostname
+#    """
+#    try:
+#        bss = __salt__['config.get']('maas')['region']['boot_sources_selections']
+#    except KeyError:
+#        ret['result'] = None
+#        ret['comment'] = "boot_sources_selections definition for sync not found."
+#        return ret
+#    s_names = []
+#    # Format  u'name': u'ubuntu/xenial'
+#    for v in bss.values():s_names.append("{0}/{1}".format(v['os'],v['release']))
+#    # Each names, should be in rack and whole rack should be in  sync-ed state
+
+
+def sync_and_wait_bs_to_all_racks():
+    """
+    Sync ALL rack's with regions source images.
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt-call maasng.sync_and_wait_bs_to_all_racks
+    """
+    sync_bs_to_rack()
+    for rack in list_racks().keys():
+        wait_for_sync_bs_to_rack(hostname=rack)
+    return True
+
+
+def wait_for_sync_bs_to_rack(hostname=None):
+    """
+    Wait for boot images sync finished, on exact rack
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt-call maasng.wait_for_sync_bs_to_rack rack_hostname
+    """
+    ret = {}
+    started_at = time.time()
+    poll_time = 5
+    timeout = 60 * 15
+    while not is_rack_synced(hostname):
+        c_timeout = timeout - (time.time() - started_at)
+        if c_timeout <= 0:
+            ret['result'] = False
+            ret[
+                "comment"] = "Boot-resources sync on rackd:{0}" \
+                             "not finished in time".format(
+                hostname)
+            return ret
+        LOG.info(
+            "Waiting boot-resources sync done to rack:{0}\n"
+            "sleep for:{1}s "
+            "Left:{2}/{3}s".format(hostname, poll_time, round(c_timeout),
+                                   timeout))
+        time.sleep(poll_time)
+    ret['result'] = is_rack_synced(hostname)
+    ret["comment"] = "Boot-resources sync on rackd:{0} finished".format(
+        hostname)
+    return ret
+
+# END RACK CONTROLLERS SECTION
