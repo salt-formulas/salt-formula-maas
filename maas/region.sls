@@ -290,15 +290,46 @@ maas_fabrics:
     - cmd: maas_login_admin
 {%- endif %}
 
-{%- if region.get('subnets', False)  %}
-maas_subnets:
-  module.run:
-  - name: maas.process_subnets
+{%- if region.subnets is defined %}
+{%- for subnet_name, subnet in region.subnets.iteritems() %}
+maas_create_subnet_{{ subnet_name }}:
+  maasng.subnet_present:
+  - cidr: {{ subnet.cidr }}
+  - name: {{ subnet_name }}
+  - fabric: {{ subnet.fabric }}
+  - gateway_ip: {{ subnet.gateway_ip }}
   - require:
     - cmd: maas_login_admin
     {%- if region.get('fabrics', False)  %}
     - module: maas_fabrics
     {%- endif %}
+{%- endfor %}
+
+{%- for subnet_name, subnet in region.subnets.iteritems() %}
+{%- if subnet.get('multiple') == True %}
+{%- for range_name, iprange in subnet.get('iprange',{}).items() %}
+maas_create_ipranger_{{ range_name }}:
+  maasng.iprange_present:
+  - name: {{ range_name }}
+  - type_range: {{ iprange.type }}
+  - start_ip: {{ iprange.start }}
+  - end_ip: {{ iprange.end }}
+  - comment: {{ iprange.comment }}
+  - require:
+    - maas_create_subnet_{{ subnet_name }}
+{%- endfor %}
+{%- else %}
+maas_create_ipranger_{{ subnet_name }}:
+  maasng.iprange_present:
+  - name: {{ subnet.get('cidr', []) }}
+  - type_range: {{ subnet.iprange.type }}
+  - start_ip: {{ subnet.iprange.start }}
+  - end_ip: {{ subnet.iprange.end }}
+  - comment: {{ subnet.iprange.type }}
+  - require:
+    - maas_create_subnet_{{ subnet_name }}
+{%- endif %}
+{%- endfor %}
 {%- endif %}
 
 {%- if region.get('devices', False)  %}
