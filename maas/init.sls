@@ -9,7 +9,4 @@ include:
 {%- if pillar.maas.region is defined %}
 - maas.region
 {%- endif %}
-{%- if pillar.maas.machines is defined %}
-- maas.machines
-{%- endif %}
 {%- endif %}
