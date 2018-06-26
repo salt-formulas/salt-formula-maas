@@ -19,7 +19,6 @@ import hashlib
 import io
 import json
 import logging
-import os.path
 import time
 import urllib2
 # Salt utils
@@ -669,8 +668,9 @@ def create_volume_group(hostname, volume_group_name, disks=[], partitions=[]):
         if p_disk["partition_table_type"] == None:
             disk_ids.append(str(p_disk["id"]))
         else:
-            result["error"] = "Device {0} on machine {1} cointains partition table".format(
-                disk, hostname)
+            result["error"] = "Device {0} on" \
+                              "machine {1} cointains partition" \
+                              "table".format(disk, hostname)
             return result
 
     for partition in partitions:
@@ -679,8 +679,9 @@ def create_volume_group(hostname, volume_group_name, disks=[], partitions=[]):
             device_part = list_partitions(hostname, device)
             partition_ids.append(str(device_part[partition]["id"]))
         except KeyError:
-            result["error"] = "Partition {0} does not exists on machine {1}".format(
-                partition, hostname)
+            result["error"] = "Partition {0} does" \
+                              "not exists on " \
+                              "machine {1}".format(partition, hostname)
             return result
 
     data["block_devices"] = disk_ids
@@ -725,7 +726,8 @@ def delete_volume_group(hostname, name):
     return True
 
 
-def create_volume(hostname, volume_name, volume_group, size, fs_type=None, mount=None):
+def create_volume(hostname, volume_name, volume_group, size, fs_type=None,
+                  mount=None):
     """
     Create volume on volume group.
 
@@ -861,7 +863,8 @@ def set_boot_disk(hostname, name):
 
     maas.post(u"/api/2.0/nodes/{0}/blockdevices/{1}/".format(
         system_id, blockdevices_id), "set_boot_disk", **data).read()
-    # TODO validation for error response (disk does not exists and node does not exists)
+    # TODO validation for error response
+    # (disk does not exists and node does not exists)
     result["new"] = "Disk {0} was set as bootable".format(name)
 
     return result
@@ -888,7 +891,73 @@ def list_fabric():
     return fabrics
 
 
-def create_fabric(name):
+def check_fabric(name):
+    """
+    Simple check that fabric already defined
+    Return format:
+    update  - require update
+    correct - fully coincides # not implemented
+    not_exist  - need's to be created
+    """
+
+    ret = 'not_exist'
+    fabrics = list_fabric()
+    if name in fabrics.keys():
+        LOG.debug("Requested fabrics with  name:{} already exist".format(name))
+        ret = 'update'
+    return ret
+
+
+def check_fabric_guess_with_cidr(name, cidrs):
+    """
+     Check, that fabric  already defined OR it was autodiscovered
+     WA to fix issue with hardcoded 'fabric-0'
+     - Find all auto-discovered subnets by cidr
+     - find all subnets, that SHOULD be configured to THIS subent
+     Warning: most probably, will fail if some subnet defined
+     to another fabric :(
+
+    { 'update'    : ID }  - require update
+    { 'correct'   : ID } - fully coincides # not implemented
+    { 'not_exist' : None }  - need's to be created
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.check_fabric_guess_with_cidr name='' cidrs=[]
+    """
+
+    ret = {'not_exist': None}
+    fabrics = list_fabric()
+    # Simple check
+    if name in fabrics:
+        LOG.debug("Requested fabrics with name:{} already exist".format(name))
+        f_id = fabrics[name]['id']
+        ret = {'update': f_id}
+    # Cidr check
+    # All discovered subnets by cidr
+    d_subnets = list_subnets(sort_by='cidr')
+    # Check, that requested cidr already in discovered.
+    # If it is - it would mean that fabric already
+    # exist(fabric-0,most probably) but should be renamed.
+    # Works only for first shot ;(
+    # due curren-single-maas logic for 'vlan-subnet' mapping.
+    # Probably, it will fail with future MAAS releases.
+    for cidr in cidrs:
+        if cidr in d_subnets:
+            f_id = d_subnets[cidr]['vlan']['fabric_id']
+            f_name = d_subnets[cidr]['vlan']['fabric']
+            LOG.warning("Detected cidr:{} in fabric:{}".format(cidr, f_name))
+            LOG.warning("Guessing, that fabric "
+                        "with current name:{}\n should be "
+                        "renamed to:{}".format(f_name, name))
+            ret = {'update': f_id}
+            return ret
+    return ret
+
+
+def create_fabric(name, fabric_id,  description, update=False):
     """
     Create new fabric.
 
@@ -896,61 +965,85 @@ def create_fabric(name):
 
     .. code-block:: bash
 
-        salt 'maas-node' maasng.create_fabric
+        salt 'maas-node' maasng.create_fabric name='123'
     """
     result = {}
     data = {
         "name": name,
-        "description": '',
         "class_type": '',
 
     }
+    if description:
+        data['description'] = description
 
     maas = _create_maas_client()
-    json_res = json.loads(maas.post(u"api/2.0/fabrics/", None, **data).read())
+    try:
+        if update:
+            json_res = json.loads(
+                maas.put(u"api/2.0/fabrics/{0}/".format(fabric_id),
+                         **data).read())
+            result["new"] = "Fabric  {0} created".format(json_res["name"])
+        else:
+            json_res = json.loads(
+                maas.post(u"api/2.0/fabrics/", None, **data).read())
+            result["changes"] = "Fabric  {0} updated".format(json_res["name"])
+    except Exception as inst:
+        LOG.debug("create_fabric data:{}".format(data))
+        try:
+            m = inst.readlines()
+        except:
+            m = inst.message
+        LOG.error("Message:{0}".format(m))
+        result['result'] = False
+        result['comment'] = 'Error creating fabric: {0}'.format(name)
+        result['error'] = m
+        return result
     LOG.debug("crete_fabric:{}".format(json_res))
-    result["new"] = "Fabrics {0} created".format(json_res["name"])
+    result['result'] = True
     return result
 
 
-def list_subnet():
+def list_subnets(sort_by='name'):
     """
-    Get list of all subnets
+    Get list of subnets from maas server
 
     CLI Example:
 
     .. code-block:: bash
 
-        salt 'maas-node' maasng.list_subnet
+        salt 'maas-node' maasng.list_subnets
     """
     subnets = {}
     maas = _create_maas_client()
     json_res = json.loads(maas.get(u'api/2.0/subnets/').read())
-    LOG.info(json_res)
     for item in json_res:
-        subnets[item["name"]] = item
+        subnets[item[sort_by]] = item
     return subnets
 
 
-def list_vlans(fabric):
+def list_vlans(fabric, sort_by='vid'):
     """
-    Get list of all vlans for specific fabric
+    Get list of vlans in fabric
 
     CLI Example:
 
     .. code-block:: bash
 
-        salt 'maas-node' maasng.list_vlans
+        salt 'maas-node' maasng.list_vlans fabric_name
     """
     vlans = {}
     maas = _create_maas_client()
     fabric_id = get_fabricid(fabric)
 
-    json_res = json.loads(
-        maas.get(u'api/2.0/fabrics/{0}/vlans/'.format(fabric_id)).read())
-    LOG.info(json_res)
+    try:
+        json_res = json.loads(
+            maas.get(u'api/2.0/fabrics/{0}/vlans/'.format(fabric_id)).read())
+    except Exception as inst:
+        m = inst.readlines()
+        LOG.error("Message:{0}".format(m))
+    LOG.debug(json_res)
     for item in json_res:
-        vlans[item["name"]] = item
+        vlans[item[sort_by]] = item
     return vlans
 
 
@@ -970,7 +1063,26 @@ def get_fabricid(fabric):
         return {"error": "Frabic not found on MaaS server"}
 
 
-def update_vlan(name, fabric, vid, description, primary_rack, dhcp_on=False):
+def check_vlan_in_fabric(fabric, vlan):
+    """
+    Check that VLAN exactly defined
+    Return format:
+    update  - require update
+    correct - fully coincides # not implemented
+    not_exist  - need's to be created
+    """
+
+    ret = 'not_exist'
+    vlans = list_vlans(fabric)
+    if vlan in vlans.keys():
+        LOG.debug("Requested VLAN:{} already exist"
+                  "in FABRIC:{}".format(vlan, fabric))
+        ret = 'update'
+    return ret
+
+
+def create_vlan_in_fabric(name, fabric, vlan, description, primary_rack,
+                          dhcp_on=False, update=False, vlan_id=""):
     """
     Update vlan
     CLI Example:
@@ -985,36 +1097,62 @@ def update_vlan(name, fabric, vid, description, primary_rack, dhcp_on=False):
         "description": description,
         "primary_rack": primary_rack,
     }
+    vlan = str(vlan)
+    # FIXME: primary_rack definition not work in 2.3.3-6498-ge4db91d.
+    # Use default, auto-select:
+    LOG.warning("Ignoring parameter primary_rack:{}".format(primary_rack))
+    data.pop('primary_rack', '')
     maas = _create_maas_client()
     fabric_id = get_fabricid(fabric)
-
-    json_res = json.loads(maas.put(
-        u'api/2.0/fabrics/{0}/vlans/{1}/'.format(fabric_id, vid), **data).read())
-    LOG.debug("update_vlan:{}".format(json_res))
+    try:
+        if update:
+            # MAAS have buggy logic here. Fallowing api reference, here should
+            # be passed VID - which mean, API ID for vlan.
+            # Otherwise, at least for maas 2.3.3-6498-ge4db91d exactly VLAN
+            # should be passed. so, make temp.backward-convertation.
+            # json_res = json.loads(maas.put(u'api/2.0/fabrics/{0}/vlans/{1}/'.format(fabric_id,vlan_id), **data).read())
+            json_res = json.loads(maas.put(
+                u'api/2.0/fabrics/{0}/vlans/{1}/'.format(fabric_id, vlan),
+                **data).read())
+        else:
+            data['vid'] = str(vlan)
+            json_res = json.loads(maas.post(u'api/2.0/fabrics/{0}/vlans/'.format(fabric_id), None, **data).read())
+    except Exception as inst:
+        LOG.debug("create_vlan_in_fabric data:{}".format(data))
+        try:
+            m = inst.readlines()
+        except:
+            m = inst.message
+        LOG.error("Message:{0}".format(m))
+        result['result'] = False
+        result['comment'] = 'Error updating vlan: {0}'.format(name)
+        result['error'] = m
+        return result
+    LOG.debug("create_vlan_in_fabric:{}".format(json_res))
     result["new"] = "Vlan {0} was updated".format(json_res["name"])
 
     return result
 
 
-def list_subnets():
+def check_subnet(cidr, name, fabric, gateway_ip):
     """
-    Get list of subnet from maas server
-
-    CLI Example:
-
-    .. code-block:: bash
-
-        salt 'maas-node' maasng.list_subnet
+    Check that subnet exactly defined
+    Return format:
+    update  - require update
+    correct - fully coincides # not implemented
+    not_exist  - need's to be created
     """
-    subnets = {}
-    maas = _create_maas_client()
-    json_res = json.loads(maas.get(u'api/2.0/subnets/').read())
-    for item in json_res:
-        subnets[item["name"]] = item
-    return subnets
+
+    ret = 'not_exist'
+    subnets = list_subnets(sort_by='cidr')
+    if cidr in subnets.keys():
+         LOG.debug("Requested subnet cidr:{} already exist".format(cidr))
+         ret = 'update'
+    return ret
 
 
-def create_subnet(cidr, name, fabric, gateway_ip):
+def create_subnet(cidr='', name='', fabric='', gateway_ip='', vlan='',
+                  update=False, subnet_id=''):
     """
     Create subnet
 
@@ -1027,19 +1165,37 @@ def create_subnet(cidr, name, fabric, gateway_ip):
 
     fabric_id = get_fabricid(fabric)
     result = {}
-
+    vlan=str(vlan)
     data = {
         "cidr": cidr,
         "name": name,
         "fabric": str(fabric_id),
         "gateway_ip": gateway_ip,
+        'vlan': vlan,
     }
     maas = _create_maas_client()
-
-    json_res = json.loads(maas.post(u"api/2.0/subnets/", None, **data).read())
+    # FIXME: vlan definition not work in 2.3.3-6498-ge4db91d.
+    LOG.warning("Ignoring parameter vlan:{}".format(vlan))
+    data.pop('vlan','')
+    try:
+        if update:
+            json_res = json.loads(maas.put(u"api/2.0/subnets/{0}/".format(subnet_id), **data).read())
+        else:
+            json_res = json.loads(maas.post(u"api/2.0/subnets/", None, **data).read())
+    except Exception as inst:
+        LOG.debug("create_subnet data:{}".format(data))
+        try:
+            m = inst.readlines()
+        except:
+            m = inst.message
+        LOG.error("Message:{0}".format(m))
+        result['result'] = False
+        result['comment'] = 'Error creating subnet: {0}'.format(name)
+        result['error'] = m
+        return result
     LOG.debug("create_subnet:{}".format(json_res))
-    result["new"] = "Subnet {0} with CIDR {1} and gateway {2} was created".format(
-        name, cidr, gateway_ip)
+    result["new"] = "Subnet {0} with CIDR {1}" \
+                    "and gateway {2} was created".format(name, cidr, gateway_ip)
 
     return result
 
@@ -1055,7 +1211,7 @@ def get_subnet(subnet):
         salt 'maas-node' maasng.get_subnet subnet_name
     """
     try:
-        return list_subnet()[subnet]
+        return list_subnets()[subnet]
     except KeyError:
         return {"error": "Subnet not found on MaaS server"}
 
@@ -1071,7 +1227,7 @@ def get_subnetid(subnet):
         salt 'maas-node' maasng.get_subnetid subnet_name
     """
     try:
-        return list_subnet()[subnet]['id']
+        return list_subnets()[subnet]['id']
     except KeyError:
         return {"error": "Subnet not found on MaaS server"}
 
@@ -1094,7 +1250,7 @@ def list_ipranges():
     return ipranges
 
 
-def create_iprange(type_range, start_ip, end_ip, comment):
+def create_iprange(type_range, start_ip, end_ip, comment=None):
     """
     Create ip range
 
@@ -1110,15 +1266,26 @@ def create_iprange(type_range, start_ip, end_ip, comment):
         "type": type_range,
         "start_ip": start_ip,
         "end_ip": end_ip,
-        "comment": comment,
     }
+    if comment:
+        data['comment'] = comment
     maas = _create_maas_client()
-
-    json_res = json.loads(maas.post(u"api/2.0/ipranges/", None, **data).read())
-
+    _name = "Type:{}: {}-{}".format(type_range, start_ip, end_ip)
+    try:
+        json_res = json.loads(
+            maas.post(u"api/2.0/ipranges/", None, **data).read())
+    except Exception as inst:
+        try:
+            m = inst.readlines()
+        except:
+            m = inst.message
+        LOG.error("Message:{0}".format(m))
+        result['result'] = False
+        result['comment'] = 'Error creating iprange:{0}'.format(_name)
+        result['error'] = m
+        return result
+    result["new"] = "Iprange: {0} has been created".format(_name)
     LOG.debug("create_iprange:{}".format(json_res))
-    result["new"] = "Iprange with type {0}, start ip {1}, end ip {2}, was created".format(
-        type_range, start_ip, end_ip)
 
     return result
 
@@ -1171,9 +1338,8 @@ def _getHTTPCode(url):
         except:
             m = e.reason
             pass
-        LOG.debug(
-            "Unexpected http code:{} from url:{}\n"
-            "with message:{}".format(code, url, m))
+        LOG.debug("Unexpected http code:{} from "
+                  "url:{}\nwith message:{}".format(code, url, m))
         pass
     return code
 
@@ -1385,16 +1551,16 @@ def boot_resources_is_importing(wait=False):
 
 def is_boot_source_selections_in(dict1, list1):
     """
-    Check that requested boot-selection already in maas bs selections, if True- return bss id.
+    Check that requested boot-selection already in maas bs selections,
+    if True- return bss id.
     # FIXME: those hack check doesn't look good.
     """
     for bs in list1:
         same = set(dict1.keys()) & set(bs.keys())
         if all(elem in same for elem in
                ['os', 'release', 'arches', 'subarches', 'labels']):
-            LOG.debug(
-                "boot-selection in maas:{0}\nlooks same to requested:{1}".format(
-                    bs, dict1))
+            LOG.debug("boot-selection in maas:{0}\n"
+                      "looks same to requested:{1}".format(bs, dict1))
             return bs['id']
     return False
 
@@ -1440,8 +1606,8 @@ def create_boot_source_selections(bs_url, os, release, arches="*",
     maas_bs_s = get_boot_source_selections(bs_url)
     if is_boot_source_selections_in(data, maas_bs_s):
         result["result"] = True
-        result[
-            "comment"] = 'Requested boot-source selection for {0} already exist.'.format(
+        result["comment"] = 'Requested boot-source selection ' \
+                            'for {0} already exist.'.format(
             bs_url)
         return result
 
@@ -1458,7 +1624,10 @@ def create_boot_source_selections(bs_url, os, release, arches="*",
                           **data).read())
         except Exception as inst:
             m = inst.readlines()
-            LOG.warning("boot_source_selections catch error during processing. Most-probably, streams not imported yet.Sleep:{}s\nRetry:{}/5".format(poll_time,i))
+            LOG.warning("boot_source_selections "
+                        "catch error during processing. Most-probably, "
+                        "streams not imported yet.\nSleep:{}s"
+                        "Retry:{}/5".format(poll_time, i))
             LOG.warning("Message:{0}".format(m))
             time.sleep(poll_time)
             continue
@@ -1466,8 +1635,8 @@ def create_boot_source_selections(bs_url, os, release, arches="*",
     LOG.debug("create_boot_source_selections:{}".format(json_res))
     if not json_res:
         result["result"] = False
-        result[
-            "comment"] = 'Failed to create requested boot-source selection for {0}.'.format(bs_url)
+        result["comment"] = 'Failed to create requested boot-source selection' \
+                            ' for {0}.'.format(bs_url)
         return result
     if wait:
         LOG.debug(

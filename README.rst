@@ -46,18 +46,37 @@ Single MAAS region service [single UI/API]
       user: mirantis
       token: "89EgtWkX45ddjMYpuL:SqVjxFG87Dr6kVf4Wp:5WLfbUgmm9XQtJxm3V2LUUy7bpCmqmnk"
       fabrics:
-        test-fabric1:
+        fabric1:
+          name: 'tf2'
           description: "Test fabric"
-        test-fabric2:
+        fabric2:
+          name: 'tf2'
           description: "Test fabric2"
+        deploy_network:
+          name: 'deploy_network'
+          description: Fabric for deploy_network
+          vlans:
+            0:
+              name: 'vlan 0'
+              description: Deploy VLAN
+              dhcp: true
+              primary_rack: "${linux:network:hostname}"
+
       subnets:
         subnet1:
-          fabric: test-fabric1
+          fabric: ${maas:region:fabrics:deploy_network:name}
           cidr: 2.2.3.0/24
           gateway_ip: 2.2.3.2
-          iprange: # reserved range for DHCP\auto mapping
-            start: 2.2.3.20
-            end: 2.2.3.250
+          vlan: 150
+          ipranges:
+            1:
+              end: "2.2.3.40"
+              start: "2.2.3.20"
+              type: dynamic
+            2:
+              end: "2.2.3.250"
+              start: "2.2.3.45"
+              type: static
       dhcp_snippets:
         test-snippet:
           value: option bootfile-name "tftp://192.168.0.10/snippet";
@@ -168,38 +187,6 @@ Single MAAS region service [single UI/API]
         default_min_hwe_kernel: ''
        sshprefs:
         - 'ssh-rsa ASD.........dfsadf blah@blah'
-
-Multiple ip ranges for one particular subnet.
-
-.. code-block:: yaml
-
-  maas:
-    region:
-      subnets:
-        Subnet1:
-          cidr: 10.10.0.0/16
-          fabric: fabric-5
-          gateway_ip: 10.10.0.1
-          iprange:
-            start: 10.10.191.241
-            end: 10.10.255.244
-            type: reserved
-        Subnet2:
-          cidr: 130.10.0.0/16
-          fabric: fabric-6
-          gateway_ip: 130.10.0.1
-          multiple: True
-          iprange:
-            range1:
-              start: 130.10.0.10
-              end: 130.10.0.15
-              type: dynamic
-              comment: 'Coment 1'
-            range2:
-              start: 130.10.0.16
-              end: 130.10.0.20
-              type: reserved
-              comment: 'Comment 2'
 
 
 Update Vlan

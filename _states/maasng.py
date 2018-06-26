@@ -18,9 +18,9 @@ RAID = {
 
 
 def __virtual__():
-    '''
+    """
     Load MaaSng module
-    '''
+    """
     return 'maasng'
 
 
@@ -225,8 +225,8 @@ def volume_group_present(hostname, name, devices=[], partitions=[]):
 
     machine = __salt__['maasng.get_machine'](hostname)
     if "error" in machine:
-        ret['comment'] = "State execution failed for machine {0}".format(
-            hostname)
+        ret['comment'] = "State execution" \
+                         "failed for machine {0}".format(hostname)
         ret['result'] = False
         ret['changes'] = machine
         return ret
@@ -257,12 +257,13 @@ def volume_group_present(hostname, name, devices=[], partitions=[]):
     return ret
 
 
-def volume_present(hostname, name, volume_group_name, size, type=None, mount=None):
-    '''
+def volume_present(hostname, name, volume_group_name, size, type=None,
+                   mount=None):
+    """
     Ensure that the disk layout does exist
 
     :param name: The name of the cloud that should not exist
-    '''
+    """
 
     ret = {'name': hostname,
            'changes': {},
@@ -309,8 +310,8 @@ def select_boot_disk(hostname, name):
 
     machine = __salt__['maasng.get_machine'](hostname)
     if "error" in machine:
-        ret['comment'] = "State execution failed for machine {0}".format(
-            hostname)
+        ret['comment'] = "State execution" \
+                         "failed for machine {0}".format(hostname)
         ret['result'] = False
         ret['changes'] = machine
         return ret
@@ -321,8 +322,8 @@ def select_boot_disk(hostname, name):
 
     if __opts__['test']:
         ret['result'] = None
-        ret['comment'] = 'LVM volume {0} will be updated on {1}'.format(
-            name, hostname)
+        ret['comment'] = 'LVM volume {0}' \
+                         'will be updated on {1}'.format(name, hostname)
 
     # TODO disk validation if exists
 
@@ -331,36 +332,57 @@ def select_boot_disk(hostname, name):
     return ret
 
 
-def update_vlan(name, fabric, vid, description, primary_rack, dhcp_on=False):
-    '''
+def vlan_present_in_fabric(name, fabric, vlan, description='',
+                           primary_rack='', dhcp_on=False):
+    """
 
     :param name: Name of vlan
     :param fabric: Name of fabric
-    :param vid: Vlan id
+    :param vlan: Vlan id
     :param description: Description of vlan
     :param dhcp_on: State of dhcp
     :param primary_rack: primary_rack
 
-    '''
+    """
 
     ret = {'name': fabric,
            'changes': {},
            'result': True,
            'comment': 'Module function maasng.update_vlan executed'}
 
-    ret["changes"] = __salt__['maasng.update_vlan'](
-        name=name, fabric=fabric, vid=vid, description=description,
-        primary_rack=primary_rack, dhcp_on=dhcp_on)
-
-    if "error" in fabric:
-        ret['comment'] = "State execution failed for fabric {0}".format(fabric)
-        ret['result'] = False
-        ret['changes'] = fabric
-        return ret
-
     if __opts__['test']:
         ret['result'] = None
-        ret['comment'] = 'Vlan {0} will be updated for {1}'.format(vid, fabric)
+        ret['comment'] = 'Vlan {0} will be updated for {1}'.format(vlan, fabric)
+        return ret
+    # Check, that vlan  already defined
+    _rez = __salt__['maasng.check_vlan_in_fabric'](fabric=fabric,
+                                                   vlan=vlan)
+    if _rez == 'not_exist':
+        changes = __salt__['maasng.create_vlan_in_fabric'](name=name,
+                                                           fabric=fabric,
+                                                           vlan=vlan,
+                                                           description=description,
+                                                           primary_rack=primary_rack,
+                                                           dhcp_on=dhcp_on)
+        ret['comment'] = 'Vlan {0} has' \
+                         'been created for {1}'.format(name, fabric)
+    elif _rez == 'update':
+        _id = __salt__['maasng.list_vlans'](fabric)[vlan]['id']
+        changes = __salt__['maasng.create_vlan_in_fabric'](name=name,
+                                                           fabric=fabric,
+                                                           vlan=vlan,
+                                                           description=description,
+                                                           primary_rack=primary_rack,
+                                                           dhcp_on=dhcp_on,
+                                                           update=True,
+                                                           vlan_id=_id)
+        ret['comment'] = 'Vlan {0} has been' \
+                         'updated for {1}'.format(name, fabric)
+    ret['changes'] = changes
+
+    if "error" in changes:
+        ret['comment'] = "State execution failed for fabric {0}".format(fabric)
+        ret['result'] = False
         return ret
 
     return ret
@@ -419,16 +441,15 @@ def boot_sources_selections_present(bs_url, os, release, arches="*",
 
     if __opts__['test']:
         ret['result'] = None
-        ret['comment'] = 'boot-source {0}  selection will be updated'.format(
-            bs_url)
+        ret['comment'] = 'boot-source {0}' \
+                         'selection will be updated'.format(bs_url)
 
     maas_boot_sources = __salt__['maasng.get_boot_source']()
     if bs_url not in maas_boot_sources.keys():
         ret["result"] = False
-        ret[
-            "comment"] = 'Requested boot-source {0} not exist! Unable' \
-                         'to proceed selection for it'.format(
-            bs_url)
+        ret["comment"] = 'Requested boot-source' \
+                         '{0} not exist! Unable' \
+                         'to proceed selection for it'.format(bs_url)
         return ret
 
     ret = __salt__['maasng.create_boot_source_selections'](bs_url,
@@ -441,7 +462,7 @@ def boot_sources_selections_present(bs_url, os, release, arches="*",
     return ret
 
 
-def iprange_present(name, type_range, start_ip, end_ip, comment):
+def iprange_present(name, type_range, start_ip, end_ip, comment=''):
     '''
 
     :param name: Name of iprange
@@ -457,25 +478,33 @@ def iprange_present(name, type_range, start_ip, end_ip, comment):
            'result': True,
            'comment': 'Module function maasng.iprange_present executed'}
 
-    start = __salt__['maasng.get_startip'](start_ip)
-    if 'start_ip' in start.keys():
-        if start["start_ip"] == start_ip:
+    # Check, that range  already defined
+    _rez = __salt__['maasng.get_startip'](start_ip)
+    if 'start_ip' in _rez.keys():
+        if _rez["start_ip"] == start_ip:
             ret['comment'] = 'Iprange {0} already exist.'.format(name)
             return ret
 
     if __opts__['test']:
         ret['result'] = None
-        ret['comment'] = 'Ip range {0} will be created with start ip: {1} and end ip: {2} and type {3}'.format(
-            name, start_ip, end_ip, type_range)
+        ret['comment'] = 'Ip range {0} will be ' \
+                         'created with start ip: {1} ' \
+                         'and end ip: {2} and ' \
+                         'type {3}'.format(name, start_ip, end_ip, type_range)
         return ret
 
-    ret["changes"] = __salt__['maasng.create_iprange'](
-        type_range=type_range, start_ip=start_ip, end_ip=end_ip, comment=comment)
-
+    changes = __salt__['maasng.create_iprange'](type_range=type_range,
+                                                start_ip=start_ip,
+                                                end_ip=end_ip, comment=comment)
+    ret["changes"] = changes
+    if "error" in changes:
+        ret['comment'] = "State execution failed for iprange {0}".format(name)
+        ret['result'] = False
+        return ret
     return ret
 
 
-def subnet_present(cidr, name, fabric, gateway_ip):
+def subnet_present(cidr, name, fabric, gateway_ip, vlan):
     '''
 
     :param cidr: Cidr for subnet
@@ -490,20 +519,80 @@ def subnet_present(cidr, name, fabric, gateway_ip):
            'result': True,
            'comment': 'Module function maasng.subnet_present executed'}
 
-    subnet = __salt__['maasng.get_subnet'](name)
-    if 'name' in subnet.keys():
-        if subnet['name'] == name:
-            ret['comment'] = 'Subnet {0} already exist for fabric {1}'.format(
-                name, fabric)
-            return ret
-
     if __opts__['test']:
         ret['result'] = None
         ret['comment'] = 'Subnet {0} will be created for {1}'.format(
             name, fabric)
         return ret
+    # Check, that subnet already defined
+    _rez = __salt__['maasng.check_subnet'](cidr, name, fabric, gateway_ip)
+    if _rez == 'not_exist':
+        changes = __salt__['maasng.create_subnet'](cidr=cidr, name=name,
+                                                   fabric=fabric,
+                                                   gateway_ip=gateway_ip,
+                                                   vlan=vlan)
+        ret['comment'] = 'Subnet {0} ' \
+                         'has been created for {1}'.format(name, fabric)
+    elif _rez == 'update':
+        _id = __salt__['maasng.list_subnets'](sort_by='cidr')[cidr]['id']
+        changes = __salt__['maasng.create_subnet'](cidr=cidr, name=name,
+                                                   fabric=fabric,
+                                                   gateway_ip=gateway_ip,
+                                                   vlan=vlan, update=True,
+                                                   subnet_id=_id)
+        ret['comment'] = 'Subnet {0} ' \
+                         'has been updated for {1}'.format(name, fabric)
 
-    ret["changes"] = __salt__['maasng.create_subnet'](
-        cidr=cidr, name=name, fabric=fabric, gateway_ip=gateway_ip)
+    if "error" in changes:
+        ret['comment'] = "State execution failed for subnet {0}".format(name)
+        ret['result'] = False
+        ret['changes'] = changes
+        return ret
+
+    return ret
+
+
+def fabric_present(name, description):
+    """
+
+    :param name: Name of fabric
+    :param description: Name of description
+
+    """
+
+    ret = {'name': name,
+           'changes': {},
+           'result': True,
+           'comment': 'Module function maasng.fabric_present executed'}
+
+    if __opts__['test']:
+        ret['result'] = None
+        ret['comment'] = 'fabric {0} will be updated for {1}'.format(vlan, name)
+        return ret
+    # All requested subnets
+    _r_subnets = __salt__['config.get']('maas').get('region', {}).get('subnets',
+                                                                      {})
+    # Assumed subnet CIDrs, expected to be in requested fabric
+    _a_subnets = [f for f in _r_subnets.keys() if
+                  _r_subnets[f]['fabric'] == name]
+    _rez = __salt__['maasng.check_fabric_guess_with_cidr'](name=name,
+                                                           cidrs=_a_subnets)
+
+    if 'not_exist' in _rez:
+        changes = __salt__['maasng.create_fabric'](name=name,
+                                                   description=description)
+        ret['new'] = 'Fabric {0} has been created'.format(name)
+    elif 'update' in _rez:
+        f_id = _rez['update']
+        changes = __salt__['maasng.create_fabric'](name=name,
+                                                   description=description,
+                                                   update=True, fabric_id=f_id)
+        ret['new'] = 'Fabric {0} has been updated'.format(name)
+    ret['changes'] = changes
+
+    if "error" in changes:
+        ret['comment'] = "State execution failed for fabric {0}".format(fabric)
+        ret['result'] = False
+        return ret
 
     return ret

@@ -149,12 +149,10 @@ maas_region_syncdb:
 maas_warmup:
   module.run:
   - name: maasng.wait_for_http_code
-{#
 # FIXME
+  - url: "http://localhost:5240/MAAS"
 # 405 - should be removed ,since twisted will be fixed
 # Currently - api always throw 405=>500 even if request has been made with 'expected 'HEAD
-#}
-  - url: "http://localhost:5240/MAAS"
   - expected: [200, 405]
   - require_in:
     - module: maas_set_admin_password
@@ -299,53 +297,76 @@ maas_commissioning_scripts:
 {%- endif %}
 
 {%- if region.get('fabrics', False)  %}
-maas_fabrics:
-  module.run:
-  - name: maas.process_fabrics
+  {%- for _, fabric in region.fabrics.iteritems() %}
+  {% set fabric_name=fabric.get('name', _) %}
+# First, create fabrics
+# Bakward-compat.name:
+
+maas_fabrics_{{ fabric_name }}:
+  maasng.fabric_present:
+  - name: {{ fabric_name }}
+  - description: {{ fabric.get('description', '') }}
   - require:
     - cmd: maas_login_admin
+
+# Second, add VLAN into fabric's
+    {%- for vlan_n, data in fabric.get('vlans',{}).iteritems() %}
+maas_vlan{{ vlan_n }}_present_for_{{ fabric_name }}:
+  maasng.vlan_present_in_fabric:
+  - vlan: {{ vlan_n }}
+  - fabric: {{ fabric_name }}
+  - name: {{ data.get('name','') }}
+  - description: {{ data.description }}
+  - primary_rack: {{ data.get('primary_rack', '')  }}
+    {%- endfor %}
+  {%- endfor %}
 {%- endif %}
 
+# Create subnets
 {%- if region.subnets is defined %}
-{%- for subnet_name, subnet in region.subnets.iteritems() %}
-maas_create_subnet_{{ subnet_name }}:
+  {%- for _, subnet in region.subnets.iteritems() %}
+maas_create_subnet_{{ subnet.cidr }}:
   maasng.subnet_present:
   - cidr: {{ subnet.cidr }}
-  - name: {{ subnet_name }}
+  - name: {{ subnet.get('name','') }}
   - fabric: {{ subnet.fabric }}
+  - vlan: {{ subnet.get('vlan','') }}
   - gateway_ip: {{ subnet.gateway_ip }}
   - require:
     - cmd: maas_login_admin
     {%- if region.get('fabrics', False)  %}
-    - module: maas_fabrics
+    - maas_fabrics_{{ subnet.fabric }}
     {%- endif %}
-{%- endfor %}
-
-{%- for subnet_name, subnet in region.subnets.iteritems() %}
-{%- if subnet.get('multiple') == True %}
-{%- for range_name, iprange in subnet.get('iprange',{}).items() %}
-maas_create_ipranger_{{ range_name }}:
+# create ranges
+    {%- for _r, iprange in subnet.get('ipranges',{}).iteritems() %}
+maas_create_iprange_{{ _r }}:
   maasng.iprange_present:
-  - name: {{ range_name }}
+  - name: {{ iprange.get('name', _r) }}
   - type_range: {{ iprange.type }}
   - start_ip: {{ iprange.start }}
   - end_ip: {{ iprange.end }}
-  - comment: {{ iprange.comment }}
+  - comment: {{ iprange.get('comment', "") }}
   - require:
-    - maas_create_subnet_{{ subnet_name }}
-{%- endfor %}
-{%- else %}
-maas_create_ipranger_{{ subnet_name }}:
-  maasng.iprange_present:
-  - name: {{ subnet.get('cidr', []) }}
-  - type_range: {{ subnet.iprange.type }}
-  - start_ip: {{ subnet.iprange.start }}
-  - end_ip: {{ subnet.iprange.end }}
-  - comment: {{ subnet.iprange.type }}
-  - require:
-    - maas_create_subnet_{{ subnet_name }}
+    - maas_create_subnet_{{ subnet.cidr }}
+    {%- endfor %}
+  {%- endfor %}
 {%- endif %}
-{%- endfor %}
+
+# Get back to fabrics again and enable DHCP
+{%- if region.get('fabrics', False)  %}
+  {%- for _, fabric in region.fabrics.iteritems() %}
+    {%- for vlan_n, data in fabric.get('vlans',{}).iteritems() %}
+    {% set fabric_name=fabric.get('name', _) %}
+maas_vlan{{ vlan_n }}_present_for_{{ fabric_name }}_dhcp:
+  maasng.vlan_present_in_fabric:
+  - vlan: {{ vlan_n }}
+  - fabric: {{ fabric_name }}
+  - name: {{ data.get('name','') }}
+  - description: {{ data.description }}
+  - primary_rack: {{ data.get('primary_rack', '')  }}
+  - dhcp_on: {{ data.get('dhcp','False') }}
+    {%- endfor %}
+  {%- endfor %}
 {%- endif %}
 
 {%- if region.get('devices', False)  %}
@@ -383,21 +404,6 @@ maas_domain:
   {%- if grains.get('kitchen-test') %}
   - onlyif: /bin/false
   {%- endif %}
-
-{%- if region.fabrics is defined %}
-{%- for fabric_name, fabric in region.fabrics.iteritems() %}
-{%- for vid, vlan in fabric.get('vlan',{}).items() %}
-maas_update_vlan_for_{{ fabric_name }}_{{ vid }}:
-  maasng.update_vlan:
-  - vid: {{ vid }}
-  - fabric: {{ fabric_name }}
-  - name: {{ vlan.get('name','') }}
-  - description: {{ vlan.description }}
-  - primary_rack: {{ region.maas_config.maas_name }}
-  - dhcp_on: {{ vlan.get('dhcp','False') }}
-{%- endfor %}
-{%- endfor %}
-{%- endif %}
 
 
 {%- if region.get('sshprefs', False)  %}
