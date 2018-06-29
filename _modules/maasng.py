@@ -1159,14 +1159,21 @@ def get_startip(start_ip):
 
 
 def _getHTTPCode(url):
-    code = 404
+    code = '003'
+    m = ''
     try:
         connection = urllib2.urlopen(url)
         code = connection.getcode()
         connection.close()
-    except urllib2.HTTPError as e:
-        code = e.getcode()
-        LOG.warning("Catch http code:{} from url:{}".format(code, url))
+    except (urllib2.HTTPError, urllib2.URLError) as e:
+        try:
+            code = e.getcode()
+        except:
+            m = e.reason
+            pass
+        LOG.debug(
+            "Unexpected http code:{} from url:{}\n"
+            "with message:{}".format(code, url, m))
         pass
     return code
 
@@ -1190,7 +1197,7 @@ def wait_for_http_code(url=None, expected=[200]):
         c_timeout = timeout - (time.time() - started_at)
         if c_timeout <= 0:
             ret['result'] = False
-            ret["comment"] = "api:{} not answered up in time".format(url)
+            ret["comment"] = "api:{} not answered in time".format(url)
             return ret
         LOG.info(
             "Waiting for api:{0}\n"
