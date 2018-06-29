@@ -155,7 +155,7 @@ maas_warmup:
 # Currently - api always throw 405=>500 even if request has been made with 'expected 'HEAD
 #}
   - url: "http://localhost:5240/MAAS"
-  - wait_for: [200, 405]
+  - expected: [200, 405]
   - require_in:
     - module: maas_set_admin_password
   {%- if grains.get('kitchen-test') %}
