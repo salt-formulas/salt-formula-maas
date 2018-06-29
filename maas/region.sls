@@ -146,6 +146,22 @@ maas_region_syncdb:
   - onlyif: /bin/false
   {%- endif %}
 
+maas_warmup:
+  module.run:
+  - name: maasng.wait_for_http_code
+{#
+# FIXME
+# 405 - should be removed ,since twisted will be fixed
+# Currently - api always throw 405=>500 even if request has been made with 'expected 'HEAD
+#}
+  - url: "http://localhost:5240/MAAS"
+  - wait_for: [200, 405]
+  - require_in:
+    - module: maas_set_admin_password
+  {%- if grains.get('kitchen-test') %}
+  - onlyif: /bin/false
+  {%- endif %}
+
 maas_set_admin_password:
   cmd.run:
   - name: "maas createadmin --username {{ region.admin.username }} --password {{ region.admin.password }} --email {{ region.admin.email }} && touch /var/lib/maas/.setup_admin"

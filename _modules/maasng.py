@@ -70,7 +70,9 @@ def _format_data(data):
     return Lazy()
 
 
-def _create_maas_client():
+def _create_maas_client(api_url=None):
+    if not api_url:
+        api_url = 'http://localhost:5240/MAAS'
     global APIKEY_FILE
     try:
         api_token = file(APIKEY_FILE).read().splitlines()[-1].strip()\
@@ -78,7 +80,6 @@ def _create_maas_client():
     except:
         LOG.exception('token')
     auth = MAASOAuth(*api_token)
-    api_url = 'http://localhost:5240/MAAS'
     dispatcher = MAASDispatcher()
     return MAASClient(auth, dispatcher, api_url)
 
@@ -1155,6 +1156,51 @@ def get_startip(start_ip):
 # END NETWORKING
 
 # MAAS CONFIG SECTION
+
+
+def _getHTTPCode(url):
+    code = 404
+    try:
+        connection = urllib2.urlopen(url)
+        code = connection.getcode()
+        connection.close()
+    except urllib2.HTTPError as e:
+        code = e.getcode()
+        LOG.warning("Catch http code:{} from url:{}".format(code, url))
+        pass
+    return code
+
+
+def wait_for_http_code(url=None, expected=[200]):
+    """
+    Simple function, which just wait for avaible api, aka wait for 200.
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.wait_for_http_code url expected=[200]
+
+    """
+    ret = {}
+    started_at = time.time()
+    poll_time = 5
+    timeout = 60 * 2
+    while _getHTTPCode(url) not in expected:
+        c_timeout = timeout - (time.time() - started_at)
+        if c_timeout <= 0:
+            ret['result'] = False
+            ret["comment"] = "api:{} not answered up in time".format(url)
+            return ret
+        LOG.info(
+            "Waiting for api:{0}\n"
+            "sleep for:{1}s "
+            "Left:{2}/{3}s".format(url, poll_time, round(c_timeout),
+                                   timeout))
+        time.sleep(poll_time)
+    ret['result'] = True
+    ret["comment"] = "MAAS API:{} up.".format(url)
+    return ret
 
 
 def _get_boot_source_id_by_url(url):
