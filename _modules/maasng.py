@@ -957,7 +957,7 @@ def check_fabric_guess_with_cidr(name, cidrs):
     return ret
 
 
-def create_fabric(name, fabric_id,  description, update=False):
+def create_fabric(name, description=None, fabric_id=None, update=False):
     """
     Create new fabric.
 
@@ -977,6 +977,7 @@ def create_fabric(name, fabric_id,  description, update=False):
         data['description'] = description
 
     maas = _create_maas_client()
+    json_res = None
     try:
         if update:
             json_res = json.loads(
@@ -1246,7 +1247,7 @@ def list_ipranges():
     return ipranges
 
 
-def create_iprange(type_range, start_ip, end_ip, comment=None):
+def create_iprange(type_range, start_ip, end_ip, subnet=None, comment=None):
     """
     Create ip range
 
@@ -1265,6 +1266,9 @@ def create_iprange(type_range, start_ip, end_ip, comment=None):
     }
     if comment:
         data['comment'] = comment
+    if subnet:
+        subnet_id = list_subnets()[subnet]['id']
+        data['subnet'] = str(subnet_id)
     maas = _create_maas_client()
     _name = "Type:{}: {}-{}".format(type_range, start_ip, end_ip)
     try:

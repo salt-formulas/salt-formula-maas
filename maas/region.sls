@@ -345,6 +345,7 @@ maas_create_iprange_{{ _r }}:
   - type_range: {{ iprange.type }}
   - start_ip: {{ iprange.start }}
   - end_ip: {{ iprange.end }}
+  - subnet: {{ iprange.get('subnet', '' ) }}
   - comment: {{ iprange.get('comment', "") }}
   - require:
     - maas_create_subnet_{{ subnet.cidr }}

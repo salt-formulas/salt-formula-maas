@@ -461,7 +461,7 @@ def boot_sources_selections_present(bs_url, os, release, arches="*",
     return ret
 
 
-def iprange_present(name, type_range, start_ip, end_ip, comment=''):
+def iprange_present(name, type_range, start_ip, end_ip, subnet=None, comment=None):
     '''
 
     :param name: Name of iprange
@@ -494,7 +494,7 @@ def iprange_present(name, type_range, start_ip, end_ip, comment=''):
 
     changes = __salt__['maasng.create_iprange'](type_range=type_range,
                                                 start_ip=start_ip,
-                                                end_ip=end_ip, comment=comment)
+                                                end_ip=end_ip,subnet=subnet, comment=comment)
     ret["changes"] = changes
     if "error" in changes:
         ret['comment'] = "State execution failed for iprange {0}".format(name)
@@ -551,7 +551,7 @@ def subnet_present(cidr, name, fabric, gateway_ip, vlan):
     return ret
 
 
-def fabric_present(name, description):
+def fabric_present(name, description=None):
     """
 
     :param name: Name of fabric
