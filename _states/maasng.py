@@ -332,8 +332,7 @@ def select_boot_disk(hostname, name):
     return ret
 
 
-def vlan_present_in_fabric(name, fabric, vlan, description='',
-                           primary_rack='', dhcp_on=False):
+def vlan_present_in_fabric(name, fabric, vlan, primary_rack, description='', dhcp_on=False):
     """
 
     :param name: Name of vlan

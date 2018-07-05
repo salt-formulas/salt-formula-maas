@@ -1095,13 +1095,9 @@ def create_vlan_in_fabric(name, fabric, vlan, description, primary_rack,
         "name": name,
         "dhcp_on": str(dhcp_on),
         "description": description,
-        "primary_rack": primary_rack,
+        "primary_rack": list_racks()[primary_rack]['system_id'],
     }
     vlan = str(vlan)
-    # FIXME: primary_rack definition not work in 2.3.3-6498-ge4db91d.
-    # Use default, auto-select:
-    LOG.warning("Ignoring parameter primary_rack:{}".format(primary_rack))
-    data.pop('primary_rack', '')
     maas = _create_maas_client()
     fabric_id = get_fabricid(fabric)
     try:
@@ -1671,7 +1667,7 @@ def get_rack(hostname):
         return {"error": "rack:{} not found on MaaS server".format(hostname)}
 
 
-def list_racks():
+def list_racks(sort_by='hostname'):
     """
     Get list of all rack controllers from maas server
 
@@ -1686,7 +1682,7 @@ def list_racks():
     json_res = json.loads(
         maas.get(u"/api/2.0/rackcontrollers/").read() or 'null')
     for item in json_res:
-        racks[item["hostname"]] = item
+        racks[item[sort_by]] = item
     return racks
 
 

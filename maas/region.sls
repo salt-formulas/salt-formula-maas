@@ -396,14 +396,17 @@ maas_package_repositories:
     - cmd: maas_login_admin
 {%- endif %}
 
-maas_domain:
-  module.run:
-  - name: maas.process_domain
-  - require:
-    - cmd: maas_login_admin
-  {%- if grains.get('kitchen-test') %}
-  - onlyif: /bin/false
-  {%- endif %}
+# FIXME
+# This function usless since broken API logic in module.
+# Should be refactored to be able work with regaiond-domain structure.
+#maas_domain:
+#  module.run:
+#  - name: maas.process_domain
+#  - require:
+#    - cmd: maas_login_admin
+#  {%- if grains.get('kitchen-test') %}
+#  - onlyif: /bin/false
+#  {%- endif %}
 
 
 {%- if region.get('sshprefs', False)  %}

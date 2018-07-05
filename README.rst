@@ -60,6 +60,8 @@ Single MAAS region service [single UI/API]
               name: 'vlan 0'
               description: Deploy VLAN
               dhcp: true
+              # FIXME: after refactoring domain module, it should be
+              # fixed exactly for FQDN, not only 'hostname'
               primary_rack: "${linux:network:hostname}"
 
       subnets:
@@ -168,7 +170,7 @@ Single MAAS region service [single UI/API]
       commissioning_scripts:
         00-maas-05-simplify-network-interfaces: /etc/maas/files/commisioning_scripts/00-maas-05-simplify-network-interfaces
       maas_config:
-        domain: mydomain.local
+        # domain: mydomain.local # This function broken
         http_proxy: http://192.168.0.10:3142
         commissioning_distro_series: xenial
         default_distro_series: xenial
