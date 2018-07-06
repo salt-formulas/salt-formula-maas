@@ -1,5 +1,5 @@
 {%- from "maas/map.jinja" import region with context %}
-{%- if region.enabled %}
+{%- if region.get('enabled', False) %}
 
 maas_region_packages:
   pkg.installed:

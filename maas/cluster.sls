@@ -1,5 +1,5 @@
 {%- from "maas/map.jinja" import cluster with context %}
-{%- if cluster.enabled %}
+{%- if cluster.get('enabled', False) %}
 
 {%- if cluster.role == 'slave' %}
 
