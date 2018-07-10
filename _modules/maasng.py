@@ -1061,7 +1061,7 @@ def get_fabricid(fabric):
     try:
         return list_fabric()[fabric]['id']
     except KeyError:
-        return {"error": "Frabic not found on MaaS server"}
+        return {"error": "Fabric not found on MaaS server"}
 
 
 def check_vlan_in_fabric(fabric, vlan):

@@ -461,8 +461,9 @@ def boot_sources_selections_present(bs_url, os, release, arches="*",
     return ret
 
 
-def iprange_present(name, type_range, start_ip, end_ip, subnet=None, comment=None):
-    '''
+def iprange_present(name, type_range, start_ip, end_ip, subnet=None,
+                    comment=None):
+    """
 
     :param name: Name of iprange
     :param type_range: Type of iprange
@@ -470,7 +471,7 @@ def iprange_present(name, type_range, start_ip, end_ip, subnet=None, comment=Non
     :param end_ip: End ip of iprange
     :param comment: Comment for specific iprange
 
-    '''
+    """
 
     ret = {'name': name,
            'changes': {},
@@ -504,14 +505,14 @@ def iprange_present(name, type_range, start_ip, end_ip, subnet=None, comment=Non
 
 
 def subnet_present(cidr, name, fabric, gateway_ip, vlan):
-    '''
+    """
 
     :param cidr: Cidr for subnet
     :param name: Name of subnet
     :param fabric: Name of fabric for subnet
     :param gateway_ip: gateway_ip
 
-    '''
+    """
 
     ret = {'name': name,
            'changes': {},
@@ -572,7 +573,7 @@ def fabric_present(name, description=None):
     _r_subnets = __salt__['config.get']('maas').get('region', {}).get('subnets',
                                                                       {})
     # Assumed subnet CIDrs, expected to be in requested fabric
-    _a_subnets = [f for f in _r_subnets.keys() if
+    _a_subnets = [_r_subnets[f]['cidr'] for f in _r_subnets.keys() if
                   _r_subnets[f]['fabric'] == name]
     _rez = __salt__['maasng.check_fabric_guess_with_cidr'](name=name,
                                                            cidrs=_a_subnets)
