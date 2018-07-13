@@ -314,6 +314,7 @@ maas_fabrics_{{ fabric_name }}:
 maas_vlan{{ vlan_n }}_present_for_{{ fabric_name }}:
   maasng.vlan_present_in_fabric:
   - vlan: {{ vlan_n }}
+  - mtu: {{ data.get('mtu','') }}
   - fabric: {{ fabric_name }}
   - name: {{ data.get('name','') }}
   - description: {{ data.description }}
@@ -361,6 +362,7 @@ maas_create_iprange_{{ _r }}:
 maas_vlan{{ vlan_n }}_present_for_{{ fabric_name }}_dhcp:
   maasng.vlan_present_in_fabric:
   - vlan: {{ vlan_n }}
+  - mtu: {{ data.get('mtu','') }}
   - fabric: {{ fabric_name }}
   - name: {{ data.get('name','') }}
   - description: {{ data.description }}

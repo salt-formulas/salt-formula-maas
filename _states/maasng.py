@@ -332,12 +332,13 @@ def select_boot_disk(hostname, name):
     return ret
 
 
-def vlan_present_in_fabric(name, fabric, vlan, primary_rack, description='', dhcp_on=False):
+def vlan_present_in_fabric(name, fabric, vlan, primary_rack, description='', dhcp_on=False, mtu=1500):
     """
 
     :param name: Name of vlan
     :param fabric: Name of fabric
     :param vlan: Vlan id
+    :param mtu: MTU
     :param description: Description of vlan
     :param dhcp_on: State of dhcp
     :param primary_rack: primary_rack
@@ -360,6 +361,7 @@ def vlan_present_in_fabric(name, fabric, vlan, primary_rack, description='', dhc
         changes = __salt__['maasng.create_vlan_in_fabric'](name=name,
                                                            fabric=fabric,
                                                            vlan=vlan,
+                                                           mtu=mtu,
                                                            description=description,
                                                            primary_rack=primary_rack,
                                                            dhcp_on=dhcp_on)
@@ -370,6 +372,7 @@ def vlan_present_in_fabric(name, fabric, vlan, primary_rack, description='', dhc
         changes = __salt__['maasng.create_vlan_in_fabric'](name=name,
                                                            fabric=fabric,
                                                            vlan=vlan,
+                                                           mtu=mtu,
                                                            description=description,
                                                            primary_rack=primary_rack,
                                                            dhcp_on=dhcp_on,
