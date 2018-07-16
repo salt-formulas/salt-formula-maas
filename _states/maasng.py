@@ -567,7 +567,7 @@ def fabric_present(name, description=None):
 
     if __opts__['test']:
         ret['result'] = None
-        ret['comment'] = 'fabric {0} will be updated for {1}'.format(vlan, name)
+        ret['comment'] = 'fabric {0} will be updated'.format(name)
         return ret
     # All requested subnets
     _r_subnets = __salt__['config.get']('maas').get('region', {}).get('subnets',

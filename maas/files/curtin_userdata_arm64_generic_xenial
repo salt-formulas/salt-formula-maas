@@ -18,16 +18,19 @@ early_commands:
 late_commands:
   maas: [wget, '--no-proxy', {{node_disable_pxe_url|escape.json}}, '--post-data', {{node_disable_pxe_data|escape.json}}, '-O', '/dev/null']
 {% endraw %}
-{%- if not cluster.saltstack_repo_key == 'none' %}
-{% set salt_repo_key = salt['hashutil.base64_b64encode'](cluster.saltstack_repo_key) %}
+{%- if cluster.get('saltstack_repo_key', False) %}
+  {% set salt_repo_key = salt['hashutil.base64_b64encode'](cluster.saltstack_repo_key) %}
   apt_00_set_gpg: ["curtin", "in-target", "--", "sh", "-c", "echo '{{salt_repo_key}}' | base64 -d | apt-key add -"]
 {%- endif %}
+{% if cluster.saltstack_repo_xenial.startswith('deb') %}
+  {%- set saltstack_repo = cluster.saltstack_repo_xenial -%}
+{%- else %}
+  {%- set saltstack_repo = 'deb [arch=amd64]' + cluster.region.host|string + '/MAAS' -%}
+{%- endif %}
 {#- NOTE: Re-use amd64 repos on arm64 since most packages are arch independent #}
-  apt_01_set_repo: ["curtin", "in-target", "--", "sh", "-c", "echo 'deb [arch=amd64] {{ cluster.saltstack_repo_xenial }}' >> /etc/apt/sources.list"]
-{% raw %}
+  apt_01_set_repo: ["curtin", "in-target", "--", "sh", "-c", "echo '{{ saltstack_repo }}' >> /etc/apt/sources.list.d/mcp_saltstack.list"]
   apt_03_update: ["curtin", "in-target", "--", "apt-get", "update"]
-  salt_01_install: ["curtin", "in-target", "--", "apt-get", "-y", "install", "python-futures", "salt-minion"]
-{% endraw %}
+  salt_01_install: ["curtin", "in-target", "--", "apt-get", "-y", "install", "salt-minion", "python-futures"]
   salt_02_hostname_set: ["curtin", "in-target", "--", "echo", "{% raw %}{{node.hostname}}{% endraw %}.{{pillar.linux.system.domain}}"]
   salt_03_hostname_get: ["curtin", "in-target", "--", "sh", "-c", "echo 'id: {% raw %}{{node.hostname}}{% endraw %}.{{pillar.linux.system.domain}}' >> /etc/salt/minion"]
   salt_04_master: ["curtin", "in-target", "--", "sh", "-c", "echo 'master: {{ salt_master_ip }}' >> /etc/salt/minion"]

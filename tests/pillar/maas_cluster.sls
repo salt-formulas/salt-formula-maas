@@ -37,8 +37,8 @@ maas:
       MA==
       =dtMN
       -----END PGP PUBLIC KEY BLOCK-----
-    saltstack_repo_trusty: "http://repo.saltstack.com/apt/ubuntu/14.04/amd64/2016.3/ trusty main"
-    saltstack_repo_xenial: "http://repo.saltstack.com/apt/ubuntu/16.04/amd64/2016.3/ xenial main"
+    saltstack_repo_trusty: "deb [arch=amd64] http://repo.saltstack.com/apt/ubuntu/14.04/amd64/2016.3/ trusty main"
+    saltstack_repo_xenial: "deb [arch=amd64] http://repo.saltstack.com/apt/ubuntu/16.04/amd64/2016.3/ xenial main"
   region:
     theme: mirantis
     bind:

@@ -472,8 +472,8 @@ Usage of local deb repos
         MA==
         =dtMN
         -----END PGP PUBLIC KEY BLOCK-----
-      saltstack_repo_xenial: "http://${_param:local_repo_url}/ubuntu-xenial stable salt"
-      saltstack_repo_trusty: "http://${_param:local_repo_url}/ubuntu-trusty stable salt"
+      saltstack_repo_xenial: "deb [arch=amd64] http://${_param:local_repo_url}/ubuntu-xenial stable salt"
+      saltstack_repo_trusty: "deb [arch=amd64] http://${_param:local_repo_url}/ubuntu-trusty stable salt"
 
 Single MAAS cluster service [multiple racks]
 
