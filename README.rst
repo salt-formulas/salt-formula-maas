@@ -59,6 +59,7 @@ Single MAAS region service [single UI/API]
             0:
               name: 'vlan 0'
               description: Deploy VLAN
+              mtu: 1500
               dhcp: true
               # FIXME: after refactoring domain module, it should be
               # fixed exactly for FQDN, not only 'hostname'
