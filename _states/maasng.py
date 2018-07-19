@@ -365,7 +365,7 @@ def vlan_present_in_fabric(name, fabric, vlan, primary_rack, description='', dhc
                                                            description=description,
                                                            primary_rack=primary_rack,
                                                            dhcp_on=dhcp_on)
-        ret['comment'] = 'Vlan {0} has' \
+        ret['comment'] = 'Vlan {0} has ' \
                          'been created for {1}'.format(name, fabric)
     elif _rez == 'update':
         _id = __salt__['maasng.list_vlans'](fabric)[vlan]['id']
@@ -378,7 +378,7 @@ def vlan_present_in_fabric(name, fabric, vlan, primary_rack, description='', dhc
                                                            dhcp_on=dhcp_on,
                                                            update=True,
                                                            vlan_id=_id)
-        ret['comment'] = 'Vlan {0} has been' \
+        ret['comment'] = 'Vlan {0} has been ' \
                          'updated for {1}'.format(name, fabric)
     ret['changes'] = changes
 

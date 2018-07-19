@@ -1095,10 +1095,11 @@ def create_vlan_in_fabric(name, fabric, vlan, description, primary_rack, mtu=150
     data = {
         "name": name,
         "dhcp_on": str(dhcp_on),
-        "mtu": mtu,
         "description": description,
         "primary_rack": list_racks()[primary_rack]['system_id'],
     }
+    if mtu:
+        data['mtu'] = str(mtu)
     vlan = str(vlan)
     maas = _create_maas_client()
     fabric_id = get_fabricid(fabric)
