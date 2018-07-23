@@ -79,7 +79,7 @@ Single MAAS region service [single UI/API]
             2:
               end: "2.2.3.250"
               start: "2.2.3.45"
-              type: static
+              type: reserved
       dhcp_snippets:
         test-snippet:
           value: option bootfile-name "tftp://192.168.0.10/snippet";
