@@ -25,7 +25,7 @@ late_commands:
 {% if cluster.saltstack_repo_xenial.startswith('deb') %}
   {%- set saltstack_repo = cluster.saltstack_repo_xenial -%}
 {%- else %}
-  {%- set saltstack_repo = 'deb [arch=amd64]' + cluster.region.host|string + '/MAAS' -%}
+  {%- set saltstack_repo = 'deb [arch=amd64]' + cluster.saltstack_repo_xenial -%}
 {%- endif %}
 {#- NOTE: Re-use amd64 repos on arm64 since most packages are arch independent #}
   apt_01_set_repo: ["curtin", "in-target", "--", "sh", "-c", "echo '{{ saltstack_repo }}' >> /etc/apt/sources.list.d/mcp_saltstack.list"]

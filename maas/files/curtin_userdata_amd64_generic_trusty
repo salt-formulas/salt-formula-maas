@@ -25,7 +25,7 @@ late_commands:
 {% if cluster.saltstack_repo_trusty.startswith('deb') %}
   {%- set saltstack_repo = cluster.saltstack_repo_trusty -%}
 {%- else %}
-  {%- set saltstack_repo = 'deb [arch=amd64]' + cluster.region.host|string + '/MAAS' -%}
+  {%- set saltstack_repo = 'deb [arch=amd64]' + cluster.saltstack_repo_trusty -%}
 {%- endif %}
   apt_01_set_repo: ["curtin", "in-target", "--", "sh", "-c", "echo '{{ saltstack_repo }}' >> /etc/apt/sources.list.d/mcp_saltstack.list"]
   apt_03_update: ["curtin", "in-target", "--", "apt-get", "update"]
