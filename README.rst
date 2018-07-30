@@ -1,14 +1,14 @@
 
-==================
-Metal as a Service
-==================
+=====
+Usage
+=====
 
-Service maas description
+Metal as a Service
 
 Sample pillars
 ==============
 
-Single maas service
+Single maas service:
 
 .. code-block:: yaml
 
@@ -16,7 +16,7 @@ Single maas service
       server:
         enabled: true
 
-Single MAAS region service [single UI/API]
+Single MAAS region service [single UI/API]:
 
 .. code-block:: yaml
 
@@ -191,10 +191,9 @@ Single MAAS region service [single UI/API]
        sshprefs:
         - 'ssh-rsa ASD.........dfsadf blah@blah'
 
+Update VLAN:
 
-Update Vlan
-
-NOTE: Vid 0 has default name untagged in MaaS UI
+.. note:: Vid 0 has default name untagged in the MaaS UI.
 
 .. code-block:: yaml
 
@@ -211,9 +210,12 @@ NOTE: Vid 0 has default name untagged in MaaS UI
               description: "Your VLAN 13"
               dhcp: False
 
-Create disk schema per machine via maas/client.sls with default lvm schema + default values
+Create disk schema per machine via ``maas/client.sls`` with
+default lvm schema + default values.
 
-NOTE: This should be used mostly for custom root partitioning and RAID configuration. For not-root partitions please use salt-formulas/salt-formula-linux.
+..note:: This should be used mostly for custom root
+         partitioning and RAID configuration. For
+         not-root partitions, use ``salt-formula-linux``.
 
 .. code-block:: yaml
 
@@ -230,7 +232,7 @@ NOTE: This should be used mostly for custom root partitioning and RAID configura
             volume_size: 8
             bootable_device: vda
 
-FLAT layout with custom root size
+FLAT layout with custom root size:
 
 .. code-block:: yaml
 
@@ -244,8 +246,7 @@ FLAT layout with custom root size
             physical_device: vda
             bootable_device: vda
 
-Size specification with `%` char used is not yet supported
-
+Size specification with ``%`` char used is not yet supported.
 
 .. code-block:: yaml
 
@@ -265,7 +266,7 @@ Size specification with `%` char used is not yet supported
                     type: ext4
                     mount: '/'
 
-Define more complex layout
+Define more complex layout:
 
 .. code-block:: yaml
 
@@ -331,7 +332,7 @@ Define more complex layout
                     type: ext4
                     mount: '/var/log'
 
-Raid setup, 4x HDD
+Raid setup, 4x HDD:
 
 .. code-block:: yaml
 
@@ -366,12 +367,13 @@ Raid setup, 4x HDD
                     type: ext4
                     mount: /var/lib/libvirt
 
-Raid + LVM setup, 2xSSD + 2xHDD
+Raid + LVM setup, 2xSSD + 2xHDD:
 
-
-Note: This setup lacks the ability run state twice, as of now when "disk_partition_present" is called, it tries blindly to
-delete the partition and then recreated. That fails as maas rejects remove partition used in RAID/LVM.
-
+.. note:: This setup lacks the ability run state twice,
+          as of now when ``disk_partition_present`` is called,
+          it tries blindly to delete the partition and then
+          recreated. That fails as MAAS rejects remove
+          partition used in RAID/LVM.
 
 .. code-block:: yaml
 
@@ -426,10 +428,7 @@ delete the partition and then recreated. That fails as maas rejects remove parti
                     type: ext4
                     mount: '/var/lib/libvirt'
 
-
-
-
-Setup image mirror (Maas boot resources,)
+Setup image mirror (Maas boot resources):
 
 .. code-block:: yaml
 
@@ -492,7 +491,7 @@ Single MAAS cluster service [multiple racks]
         enabled: true
         role: master/slave
 
-MAAS region service with backup data
+MAAS region service with backup data:
 
 .. code-block:: yaml
 
@@ -506,7 +505,9 @@ MAAS region service with backup data
 Test pillars
 ==============
 
-Mind the postgresql and rsyslog `.sls`. Database and syslog service are required for MAAS to properly install and work.
+Mind the PostgreSQL and rsyslog ``.sls``. Database and
+syslog service are required for MAAS to properly install
+and work.
 
 * https://github.com/salt-formulas/salt-formula-rsyslog/tree/master/tests/pillar
 
@@ -514,7 +515,7 @@ Mind the postgresql and rsyslog `.sls`. Database and syslog service are required
 Module function's example:
 ==========================
 
-* Wait for status of selected machine's:
+Wait for status of selected machine's:
 
 .. code-block:: bash
 
@@ -535,7 +536,9 @@ Module function's example:
         - cmd: maas_login_admin
       ...
 
-If module run w/\o any extra paremeters - `wait_for_machines_ready` will wait for defined in salt machines. In those case, will be usefull to skip some machines:
+If module run w/\o any extra paremeters,
+``wait_for_machines_ready`` will wait for defined in salt
+machines. In this case, it is usefull to skip some machines:
 
 .. code-block:: bash
 
@@ -555,7 +558,7 @@ If module run w/\o any extra paremeters - `wait_for_machines_ready` will wait fo
         - cmd: maas_login_admin
       ...
 
-List of available `req_status` defined in global variable:
+List of available ``req_status`` defined in global variable:
 
 .. code-block:: python
 
@@ -567,7 +570,6 @@ List of available `req_status` defined in global variable:
         (13, 'Releasing failed'), (14, 'Disk erasing'),
         (15, 'Failed disk erasing')])
 
-
 Read more
 =========
 
@@ -576,32 +578,26 @@ Read more
 Documentation and Bugs
 ======================
 
-To learn how to install and update salt-formulas, consult the documentation
-available online at:
+* http://salt-formulas.readthedocs.io/
+   Learn how to install and update salt-formulas
 
-    http://salt-formulas.readthedocs.io/
+* https://github.com/salt-formulas/salt-formula-maas/issues
+   In the unfortunate event that bugs are discovered, report the issue to the
+   appropriate issue tracker. Use the Github issue tracker for a specific salt
+   formula
 
-In the unfortunate event that bugs are discovered, they should be reported to
-the appropriate issue tracker. Use Github issue tracker for specific salt
-formula:
+* https://launchpad.net/salt-formulas
+   For feature requests, bug reports, or blueprints affecting the entire
+   ecosystem, use the Launchpad salt-formulas project
 
-    https://github.com/salt-formulas/salt-formula-maas/issues
+* https://launchpad.net/~salt-formulas-users
+   Join the salt-formulas-users team and subscribe to mailing list if required
 
-For feature requests, bug reports or blueprints affecting entire ecosystem,
-use Launchpad salt-formulas project:
+* https://github.com/salt-formulas/salt-formula-maas
+   Develop the salt-formulas projects in the master branch and then submit pull
+   requests against a specific formula
 
-    https://launchpad.net/salt-formulas
+* #salt-formulas @ irc.freenode.net
+   Use this IRC channel in case of any questions or feedback which is always
+   welcome
 
-You can also join salt-formulas-users team and subscribe to mailing list:
-
-    https://launchpad.net/~salt-formulas-users
-
-Developers wishing to work on the salt-formulas projects should always base
-their work on master branch and submit pull request against specific formula.
-
-    https://github.com/salt-formulas/salt-formula-maas
-
-Any questions or feedback is always welcome so feel free to join our IRC
-channel:
-
-    #salt-formulas @ irc.freenode.net
