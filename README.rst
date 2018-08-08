@@ -213,9 +213,9 @@ Update VLAN:
 Create disk schema per machine via ``maas/client.sls`` with
 default lvm schema + default values.
 
-..note:: This should be used mostly for custom root
-         partitioning and RAID configuration. For
-         not-root partitions, use ``salt-formula-linux``.
+.. note:: This should be used mostly for custom root
+          partitioning and RAID configuration. For
+          not-root partitions, use ``salt-formula-linux``.
 
 .. code-block:: yaml
 
