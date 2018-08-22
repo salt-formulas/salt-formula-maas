@@ -1,4 +1,3 @@
-
 =====
 Usage
 =====
@@ -157,11 +156,21 @@ Single MAAS region service [single UI/API]:
             power_password: bmc_password
             #Optional (for legacy HW)
             power_driver: LAN
-            # FIXME: that's should be moved into another,livirt example.
-            # Used in case of power_type: virsh
-            power_id: my_libvirt_vm_name
           distro_series: xenial
           hwe_kernel: hwe-16.04
+        virsh_example:
+          pxe_interface_mac: "52:54:00:00:01:01"
+          interfaces:
+            nic01:
+              type: eth
+              name: eth0
+              mac: "52:54:00:00:01:01"
+              subnet: "${maas:region:subnets:deploy_network:name}"
+              mode: "dhcp"
+          power_parameters:
+            power_type: virsh
+            power_address: "qemu+tcp://my-kvm-node-hostname/system"
+            power_id: "kvm01-pxe01"
       devices:
         machine1-ipmi:
           interface:
