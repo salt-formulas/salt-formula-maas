@@ -352,7 +352,8 @@ def vlan_present_in_fabric(name, fabric, vlan, primary_rack, description='', dhc
 
     if __opts__['test']:
         ret['result'] = None
-        ret['comment'] = 'Vlan {0} will be updated for {1}'.format(vlan, fabric)
+        ret['comment'] = 'Vlan {0} will be updated for {1}'.format(
+            vlan, fabric)
         return ret
     # Check, that vlan  already defined
     _rez = __salt__['maasng.check_vlan_in_fabric'](fabric=fabric,
@@ -498,7 +499,7 @@ def iprange_present(name, type_range, start_ip, end_ip, subnet=None,
 
     changes = __salt__['maasng.create_iprange'](type_range=type_range,
                                                 start_ip=start_ip,
-                                                end_ip=end_ip,subnet=subnet, comment=comment)
+                                                end_ip=end_ip, subnet=subnet, comment=comment)
     ret["changes"] = changes
     if "error" in changes:
         ret['comment'] = "State execution failed for iprange {0}".format(name)
@@ -596,6 +597,50 @@ def fabric_present(name, description=None):
     if "error" in changes:
         ret['comment'] = "State execution failed for fabric {0}".format(fabric)
         ret['result'] = False
+        return ret
+
+    return ret
+
+
+def sshkey_present(name, sshkey):
+    """
+
+    :param name: Name of user
+    :param sshkey: SSH key for MAAS user
+
+    """
+
+    ret = {'name': name,
+           'changes': {},
+           'result': True,
+           'comment': 'Module function maasng.ssshkey_present executed'}
+
+    # Check, that subnet already defined
+    _rez = __salt__['maasng.get_sshkey'](sshkey)
+    if 'key' in _rez.keys():
+        if _rez["key"] == sshkey:
+            ret['comment'] = 'SSH key {0} already exist for user {1}.'.format(
+                sshkey, name)
+            return ret
+
+    if __opts__['test']:
+        ret['result'] = None
+        ret['comment'] = 'SSH  key {0} will be add it to MAAS for user {1}'.format(
+            sshkey, name)
+
+        return ret
+
+    changes = __salt__['maasng.add_sshkey'](sshkey=sshkey)
+    ret['comment'] = 'SSH-key {0} ' \
+        'has been added for user {1}'.format(sshkey, name)
+
+    ret['changes'] = changes
+
+    if "error" in changes:
+        ret['comment'] = "State execution failed for sshkey: {0}".format(
+            sshkey)
+        ret['result'] = False
+        ret['changes'] = changes
         return ret
 
     return ret

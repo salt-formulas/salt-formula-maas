@@ -1115,7 +1115,8 @@ def create_vlan_in_fabric(name, fabric, vlan, description, primary_rack, mtu=150
                 **data).read())
         else:
             data['vid'] = str(vlan)
-            json_res = json.loads(maas.post(u'api/2.0/fabrics/{0}/vlans/'.format(fabric_id), None, **data).read())
+            json_res = json.loads(maas.post(
+                u'api/2.0/fabrics/{0}/vlans/'.format(fabric_id), None, **data).read())
     except Exception as inst:
         LOG.debug("create_vlan_in_fabric data:{}".format(data))
         try:
@@ -1145,8 +1146,8 @@ def check_subnet(cidr, name, fabric, gateway_ip):
     ret = 'not_exist'
     subnets = list_subnets(sort_by='cidr')
     if cidr in subnets.keys():
-         LOG.debug("Requested subnet cidr:{} already exist".format(cidr))
-         ret = 'update'
+        LOG.debug("Requested subnet cidr:{} already exist".format(cidr))
+        ret = 'update'
     return ret
 
 
@@ -1164,7 +1165,7 @@ def create_subnet(cidr='', name='', fabric='', gateway_ip='', vlan='',
 
     fabric_id = get_fabricid(fabric)
     result = {}
-    vlan=str(vlan)
+    vlan = str(vlan)
     data = {
         "cidr": cidr,
         "name": name,
@@ -1175,12 +1176,14 @@ def create_subnet(cidr='', name='', fabric='', gateway_ip='', vlan='',
     maas = _create_maas_client()
     # FIXME: vlan definition not work in 2.3.3-6498-ge4db91d.
     LOG.warning("Ignoring parameter vlan:{}".format(vlan))
-    data.pop('vlan','')
+    data.pop('vlan', '')
     try:
         if update:
-            json_res = json.loads(maas.put(u"api/2.0/subnets/{0}/".format(subnet_id), **data).read())
+            json_res = json.loads(
+                maas.put(u"api/2.0/subnets/{0}/".format(subnet_id), **data).read())
         else:
-            json_res = json.loads(maas.post(u"api/2.0/subnets/", None, **data).read())
+            json_res = json.loads(
+                maas.post(u"api/2.0/subnets/", None, **data).read())
     except Exception as inst:
         LOG.debug("create_subnet data:{}".format(data))
         try:
@@ -1194,7 +1197,8 @@ def create_subnet(cidr='', name='', fabric='', gateway_ip='', vlan='',
         return result
     LOG.debug("create_subnet:{}".format(json_res))
     result["new"] = "Subnet {0} with CIDR {1}" \
-                    "and gateway {2} was created".format(name, cidr, gateway_ip)
+                    "and gateway {2} was created".format(
+                        name, cidr, gateway_ip)
 
     return result
 
@@ -1592,7 +1596,7 @@ def create_boot_source_selections(bs_url, os, release, arches="*",
         :param labels:    The label lists for which to import resources.
     """
 
-    result = { "result" : True, 'name' : bs_url, 'changes' : None }
+    result = {"result": True, 'name': bs_url, 'changes': None}
 
     data = {
         "os": os,
@@ -1619,7 +1623,7 @@ def create_boot_source_selections(bs_url, os, release, arches="*",
     # at least simple retry ;(
     json_res = False
     poll_time = 5
-    for i in range(0,5):
+    for i in range(0, 5):
         try:
             json_res = json.loads(
                 maas.post(u'api/2.0/boot-sources/{0}/selections/'.format(bs_id), None,
@@ -1647,7 +1651,8 @@ def create_boot_source_selections(bs_url, os, release, arches="*",
         ret = boot_resources_import(action='import', wait=True)
         if ret is dict:
             return ret
-    result["comment"] = "boot-source selection for {0} was created".format(bs_url)
+    result["comment"] = "boot-source selection for {0} was created".format(
+        bs_url)
     result["new"] = data
 
     return result
@@ -1820,3 +1825,65 @@ def wait_for_sync_bs_to_rack(hostname=None):
     return ret
 
 # END RACK CONTROLLERS SECTION
+# SSHKEYS
+
+
+def list_sshkeys():
+    """
+    Get list of all sshkeys
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.list_sshkeys
+        salt-call maasng.list_sshkeys
+    """
+    ssh = {}
+    maas = _create_maas_client()
+    json_res = json.loads(maas.get(u'api/2.0/account/prefs/sshkeys/').read())
+    LOG.info(json_res)
+    for item in json_res:
+        ssh[item["key"]] = item
+    return ssh
+
+
+def add_sshkey(sshkey):
+    """
+    Add SSH key for user to MAAS.
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.add_sshkey sshkey
+        salt-call maasng.add_sshkey sshkey
+    """
+    data = {
+        "key": sshkey,
+    }
+    result = {}
+    maas = _create_maas_client()
+
+    maas.post(u"/api/2.0/account/prefs/sshkeys/", None, **data).read()
+    result["new"] = "SSH Key {0} was added.".format(sshkey)
+
+    return result
+
+
+def get_sshkey(sshkey):
+    """
+    Get start ip for ip range
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt 'maas-node' maasng.get_sshkey sshkey
+        salt-call maasng.get_sshkey sshkey
+    """
+    try:
+        return list_sshkeys()[sshkey]
+    except KeyError:
+        return {"error": "SSH key not found on MaaS server"}
+# END SSHKEYS

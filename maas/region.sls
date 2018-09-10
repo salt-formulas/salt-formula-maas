@@ -411,13 +411,16 @@ maas_package_repositories:
 #  - onlyif: /bin/false
 #  {%- endif %}
 
-
 {%- if region.get('sshprefs', False)  %}
-maas_sshprefs:
-  module.run:
-  - name: maas.process_sshprefs
+{%- for sshkey in region.sshprefs %}
+{%- set idx = loop.index %}
+maas_sshkey_{{ idx }}:
+  maasng.sshkey_present:
+  - name: {{ region.admin.username }}
+  - sshkey: {{ sshkey }}
   - require:
     - cmd: maas_login_admin
+{% endfor %}
 {%- endif %}
 
 {%- endif %}
