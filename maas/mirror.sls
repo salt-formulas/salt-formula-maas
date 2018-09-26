@@ -9,6 +9,18 @@ maas_mirror_packages:
     - names: {{ mirror.pkgs }}
 
 {%- for section_name, section in mirror.image.sections.iteritems() %}
+{%- if pillar.maas.region is defined and pillar.maas.region.maas_config.http_proxy is defined and pillar.maas.region.maas_config.get('enable_http_proxy', False) %}
+{%- set http_proxy = salt['pillar.get']('maas:region:maas_config').get('http_proxy', 'None') %}
+{%- set https_proxy = salt['pillar.get']('maas:region:maas_config').get('https_proxy', 'None') %}
+maas_mirror_proxy_{{ section_name }}:
+  environ.setenv:
+  - name: HTTP_PROXY
+  - value:
+      http_proxy: {{ http_proxy }}
+      https_proxy: {{ https_proxy }}
+  - require_in:
+    - pkg: mirror_image_{{ section_name }}
+{%- endif %}
 
 mirror_image_{{ section_name }}:
   cmd.run:
