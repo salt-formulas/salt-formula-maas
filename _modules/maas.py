@@ -421,27 +421,11 @@ class Machine(MaasObject):
             'mac_addresses': machine_pxe_mac,
             'power_type': power_data.get('power_type', 'manual'),
         }
-        if 'power_address' in power_data:
-            data['power_parameters_power_address'] = power_data['power_address']
-        if 'power_driver' in power_data:
-            data['power_parameters_power_driver'] = power_data['power_driver']
-        if 'power_user' in power_data:
-            data['power_parameters_power_user'] = power_data['power_user']
-        if 'power_password' in power_data:
-            data['power_parameters_power_pass'] = \
-                power_data['power_password']
-        if 'power_id' in power_data:
-            data['power_parameters_power_id'] = power_data['power_id']
-        if 'power_nova_id' in power_data:
-            data['power_parameters_nova_id'] = power_data['power_nova_id']
-        if 'power_os_tenantname' in power_data:
-            data['power_parameters_os_tenantname'] = power_data['power_os_tenantname']
-        if 'power_os_username' in power_data:
-            data['power_parameters_os_username'] = power_data['power_os_username']
-        if 'power_os_password' in power_data:
-            data['power_parameters_os_password'] = power_data['power_os_password']
-        if 'power_os_authurl' in power_data:
-            data['power_parameters_os_authurl'] = power_data['power_os_authurl']
+        for k,v in power_data.items():
+            if k == 'power_type':
+                continue
+            data_key = 'power_parameters_{}'.format(k)
+            data[data_key] = v
         return data
 
     def update(self, new, old):
