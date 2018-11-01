@@ -24,6 +24,23 @@ def __virtual__():
     return 'maasng'
 
 
+def maasng(funcname, *args, **kwargs):
+    """
+    Simple wrapper, for __salt__ maasng
+    :param funcname:
+    :param args:
+    :param kwargs:
+    :return:
+    """
+    return __salt__['maasng.{}'.format(funcname)](*args, **kwargs)
+
+
+def merge2dicts(d1, d2):
+    z = d1.copy()
+    z.update(d2)
+    return z
+
+
 def disk_layout_present(hostname, layout_type, root_size=None, root_device=None,
                         volume_group=None, volume_name=None, volume_size=None,
                         disk={}, **kwargs):
@@ -391,7 +408,9 @@ def vlan_present_in_fabric(name, fabric, vlan, primary_rack, description='', dhc
     return ret
 
 
-def boot_source_present(url, keyring_file='', keyring_data=''):
+def boot_source_present(url, keyring_file='', keyring_data='',
+                        delete_undefined_sources=False,
+                        delete_undefined_sources_except_urls=[]):
     """
     Process maas boot-sources: link to maas-ephemeral repo
 
@@ -399,6 +418,7 @@ def boot_source_present(url, keyring_file='', keyring_data=''):
     :param url:               The URL of the BootSource.
     :param keyring_file:      The path to the keyring file for this BootSource.
     :param keyring_data:      The GPG keyring for this BootSource, base64-encoded data.
+    :param delete_undefined_sources:  Delete all boot-sources, except defined in reclass
     """
     ret = {'name': url,
            'changes': {},
@@ -408,16 +428,20 @@ def boot_source_present(url, keyring_file='', keyring_data=''):
     if __opts__['test']:
         ret['result'] = None
         ret['comment'] = 'boot-source {0} will be updated'.format(url)
-
-    maas_boot_sources = __salt__['maasng.get_boot_source']()
-    # TODO imlpement check and update for keyrings!
+    maas_boot_sources = maasng('get_boot_source')
+    # TODO implement check and update for keyrings!
     if url in maas_boot_sources.keys():
         ret["result"] = True
         ret["comment"] = 'boot-source {0} alredy exist'.format(url)
-        return ret
-    ret["changes"] = __salt__['maasng.create_boot_source'](url,
-                                                           keyring_filename=keyring_file,
-                                                           keyring_data=keyring_data)
+    else:
+        ret["changes"] = maasng('create_boot_source', url,
+                                keyring_filename=keyring_file,
+                                keyring_data=keyring_data)
+    if delete_undefined_sources:
+        ret["changes"] = merge2dicts(ret.get('changes', {}),
+                                     maasng('boot_sources_delete_all_others',
+                                            except_urls=delete_undefined_sources_except_urls))
+        # Re-import data
     return ret
 
 
@@ -447,7 +471,7 @@ def boot_sources_selections_present(bs_url, os, release, arches="*",
         ret['comment'] = 'boot-source {0}' \
                          'selection will be updated'.format(bs_url)
 
-    maas_boot_sources = __salt__['maasng.get_boot_source']()
+    maas_boot_sources = maasng('get_boot_source')
     if bs_url not in maas_boot_sources.keys():
         ret["result"] = False
         ret["comment"] = 'Requested boot-source' \
@@ -455,13 +479,11 @@ def boot_sources_selections_present(bs_url, os, release, arches="*",
                          'to proceed selection for it'.format(bs_url)
         return ret
 
-    ret = __salt__['maasng.create_boot_source_selections'](bs_url,
-                                                           os,
-                                                           release,
-                                                           arches=arches,
-                                                           subarches=subarches,
-                                                           labels=labels,
-                                                           wait=wait)
+    ret = maasng('create_boot_source_selections', bs_url, os, release,
+                 arches=arches,
+                 subarches=subarches,
+                 labels=labels,
+                 wait=wait)
     return ret
 
 

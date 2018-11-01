@@ -1438,13 +1438,14 @@ def boot_sources_delete_all_others(except_urls=[]):
     """
     Delete all boot-sources, except defined in 'except_urls' list.
     """
-    result = {}
+    result = {'changes': {}}
     maas_boot_sources = get_boot_source()
     if 0 in [len(except_urls), len(maas_boot_sources)]:
         result['result'] = None
-        result[
-            "comment"] = "Exclude or maas sources for delete empty. No changes goinng to be."
+        result["comment"] = "'except_urls' or 'maas boot-sources' for " \
+                            "delete empty. No changes goinng to be."
         return result
+    # FIXME: fix 'changes' accumulator
     for url in maas_boot_sources.keys():
         if url not in except_urls:
             LOG.info("Removing boot-source:{}".format(url))
@@ -1623,7 +1624,7 @@ def create_boot_source_selections(bs_url, os, release, arches="*",
     # at least simple retry ;(
     json_res = False
     poll_time = 5
-    for i in range(0, 5):
+    for i in range(0, 10):
         try:
             json_res = json.loads(
                 maas.post(u'api/2.0/boot-sources/{0}/selections/'.format(bs_id), None,
@@ -1632,8 +1633,8 @@ def create_boot_source_selections(bs_url, os, release, arches="*",
             m = inst.readlines()
             LOG.warning("boot_source_selections "
                         "catch error during processing. Most-probably, "
-                        "streams not imported yet.\nSleep:{}s"
-                        "Retry:{}/5".format(poll_time, i))
+                        "streams data not imported yet.\nSleep:{}s "
+                        "Retry:{}/10".format(poll_time, i))
             LOG.warning("Message:{0}".format(m))
             time.sleep(poll_time)
             continue

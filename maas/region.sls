@@ -197,9 +197,6 @@ maas_wait_for_region_import_done:
   - wait: True
   - require:
     - cmd: maas_login_admin
-  {% if region.get('boot_sources_delete_all_others', False)  %}
-    - module: region_boot_sources_delete_all_others
-  {%- endif %}
   - require_in:
     - module: maas_wait_for_racks_import_done
   {%- if grains.get('kitchen-test') %}
@@ -215,20 +212,6 @@ maas_config:
   - onlyif: /bin/false
   {%- endif %}
 
-{##}
-{% if region.get('boot_sources_delete_all_others', False)  %}
-  {# Collect exclude list, all other - will be removed #}
-  {% set exclude_list=[] %}
-  {%- for _, bs in region.boot_sources.iteritems() %} {% if bs.url is defined %} {% do exclude_list.append(bs.url) %} {% endif %} {%- endfor %}
-region_boot_sources_delete_all_others:
-  module.run:
-  - name: maasng.boot_sources_delete_all_others
-  - except_urls: {{ exclude_list }}
-  - require:
-    - cmd: maas_login_admin
-{%- endif %}
-
-{##}
 {% if region.get('boot_sources', False)  %}
   {%- for b_name, b_source in region.boot_sources.iteritems() %}
 maas_region_boot_source_{{ b_name }}:
@@ -239,6 +222,13 @@ maas_region_boot_source_{{ b_name }}:
   {%- endif %}
   {%- if b_source.keyring_file is defined %}
     - keyring_file: {{ b_source.keyring_file }}
+  {%- endif %}
+  {% if region.get('boot_sources_delete_all_others', False)  %}
+    {# Collect exclude list, all other - will be removed #}
+    {% set exclude_list=[] %}
+    {%- for _, bs in region.boot_sources.iteritems() %} {% if bs.url is defined %} {% do exclude_list.append(bs.url) %} {% endif %} {%- endfor %}
+    - delete_undefined_sources: True
+    - delete_undefined_sources_except_urls: {{ exclude_list }}
   {%- endif %}
     - require:
       - cmd: maas_login_admin
