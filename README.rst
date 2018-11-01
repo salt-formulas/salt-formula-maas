@@ -137,7 +137,8 @@ Single MAAS region service [single UI/API]:
             power_type: ipmi
             power_address: '192.168.10.10'
             power_user: bmc_user
-            power_password: bmc_password
+            # power_password: bmc_password  # Old format,please use new one
+            power_pass: bmc_password
             #Optional (for legacy HW)
             power_driver: LAN
           distro_series: xenial
@@ -153,7 +154,8 @@ Single MAAS region service [single UI/API]:
             power_type: ipmi
             power_address: '192.168.10.10'
             power_user: bmc_user
-            power_password: bmc_password
+            # power_password: bmc_password  # Old format,please use new one
+            power_pass: bmc_password
             #Optional (for legacy HW)
             power_driver: LAN
           distro_series: xenial
@@ -510,6 +512,37 @@ MAAS region service with backup data:
           initial_data:
             source: cfg01.local
             host: 192.168.0.11
+
+MAAS service power_parameters defintion with OpenStack Nova power_type:
+
+.. code-block:: yaml
+
+    maas:
+      region:
+        machines:
+          cmp1:
+            power_type: nova
+            power_parameters: # old style, deprecated
+              power_nova_id: hostuuid
+              power_os_tenantname: tenant
+              power_os_username: user
+              power_os_password: password
+              power_os_authurl: http://url
+
+
+.. code-block:: yaml
+
+    maas:
+      region:
+        machines:
+          cmp1:
+            power_type: nova
+            power_parameters: # new style
+              nova_id: hostuuid
+              os_tenantname: tenant
+              os_username: user
+              os_password: password
+              os_authurl: http://url
 
 Test pillars
 ==============

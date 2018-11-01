@@ -421,9 +421,46 @@ class Machine(MaasObject):
             'mac_addresses': machine_pxe_mac,
             'power_type': power_data.get('power_type', 'manual'),
         }
-        for k,v in power_data.items():
+        for k, v in power_data.items():
             if k == 'power_type':
                 continue
+            elif k == 'power_password':
+                data['power_parameters_power_pass'] = v
+                LOG.warning(
+                    "Deprecated power parameter:power_password passed! "
+                    "Please change key name to 'power_pass'! ")
+                continue
+            elif k == 'power_nova_id':
+                data['power_parameters_nova_id'] = v
+                LOG.warning(
+                    "Deprecated power parameter:power_nova_id passed! "
+                    "Please change key name to 'nova_id'! ")
+                continue
+            elif k == 'power_os_tenantname':
+                data['power_parameters_os_tenantname'] = v
+                LOG.warning(
+                    "Deprecated power parameter:power_os_tenantname passed! "
+                    "Please change key name to 'os_tenantname'! ")
+                continue
+            elif k == 'power_os_username':
+                data['power_parameters_os_username'] = v
+                LOG.warning(
+                    "Deprecated power parameter:power_os_username passed! "
+                    "Please change key name to 'os_username'! ")
+                continue
+            elif k == 'power_os_password':
+                data['power_parameters_os_password'] = v
+                LOG.warning(
+                    "Deprecated power parameter:power_os_password passed! "
+                    "Please change key name to 'os_password'! ")
+                continue
+            elif k == 'power_os_authurl':
+                data['power_parameters_os_authurl'] = v
+                LOG.warning(
+                    "Deprecated power parameter:power_os_authurl passed! "
+                    "Please change key name to 'os_authurl'! ")
+                continue
+
             data_key = 'power_parameters_{}'.format(k)
             data[data_key] = v
         return data
