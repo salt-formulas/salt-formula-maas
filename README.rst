@@ -439,6 +439,41 @@ Raid + LVM setup, 2xSSD + 2xHDD:
                     type: ext4
                     mount: '/var/lib/libvirt'
 
+
+LVM setup using partition
+
+
+.. code-block:: yaml
+
+
+  maas:
+    region:
+      machines:
+        serverWithLvmExample3:
+          disk_layout:
+            type: custom
+            bootable_device: sda
+            disk:
+              sda:
+                type: physical
+                partition_schema:
+                  part1:
+                    size: 50G
+                  part2:
+                    mount: /var/lib/libvirt/images/
+                    size: 10G
+                    type: ext4
+              vg0:
+                partitions:
+                  - sda-part1
+                type: lvm
+                volume:
+                  root:
+                    mount: /
+                    size: 40G
+                    type: ext4
+
+
 Setup image mirror (Maas boot resources):
 
 .. code-block:: yaml
