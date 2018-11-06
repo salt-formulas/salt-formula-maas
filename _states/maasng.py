@@ -56,10 +56,13 @@ def disk_layout_present(hostname, layout_type, root_size=None, root_device=None,
 
     machine = __salt__['maasng.get_machine'](hostname)
     if "error" in machine:
-        ret['comment'] = "State execution failed for machine {0}".format(
-            hostname)
-        ret['result'] = False
-        ret['changes'] = machine
+        if 0 in machine["error"]:
+            ret['comment'] = "No such machine {0}".format(hostname)
+            ret['changes'] = machine
+        else:
+            ret['comment'] = "State execution failed for machine {0}".format(hostname)
+            ret['result'] = False
+            ret['changes'] = machine
         return ret
 
     if machine["status_name"] != "Ready":
@@ -108,10 +111,14 @@ def raid_present(hostname, name, level, devices=[], partitions=[],
 
     machine = __salt__['maasng.get_machine'](hostname)
     if "error" in machine:
-        ret['comment'] = "State execution failed for machine {0}".format(
-            hostname)
-        ret['result'] = False
-        ret['changes'] = machine
+        if 0 in machine["error"]:
+            ret['comment'] = "No such machine {0}".format(hostname)
+            ret['changes'] = machine
+        else:
+            ret['comment'] = "State execution failed for machine {0}".format(
+                hostname)
+            ret['result'] = False
+            ret['changes'] = machine
         return ret
 
     if machine["status_name"] != "Ready":
@@ -166,10 +173,14 @@ def disk_partition_present(hostname, disk, partition_schema={}):
 
     machine = __salt__['maasng.get_machine'](hostname)
     if "error" in machine:
-        ret['comment'] = "State execution failed for machine {0}".format(
-            hostname)
-        ret['result'] = False
-        ret['changes'] = machine
+        if 0 in machine["error"]:
+            ret['comment'] = "No such machine {0}".format(hostname)
+            ret['changes'] = machine
+        else:
+            ret['comment'] = "State execution failed for machine {0}".format(
+                hostname)
+            ret['result'] = False
+            ret['changes'] = machine
         return ret
 
     if machine["status_name"] != "Ready":
@@ -242,10 +253,14 @@ def volume_group_present(hostname, name, devices=[], partitions=[]):
 
     machine = __salt__['maasng.get_machine'](hostname)
     if "error" in machine:
-        ret['comment'] = "State execution" \
-                         "failed for machine {0}".format(hostname)
-        ret['result'] = False
-        ret['changes'] = machine
+        if 0 in machine["error"]:
+            ret['comment'] = "No such machine {0}".format(hostname)
+            ret['changes'] = machine
+        else:
+            ret['comment'] = "State execution" \
+                             "failed for machine {0}".format(hostname)
+            ret['result'] = False
+            ret['changes'] = machine
         return ret
 
     if machine["status_name"] != "Ready":
@@ -289,10 +304,14 @@ def volume_present(hostname, name, volume_group_name, size, type=None,
 
     machine = __salt__['maasng.get_machine'](hostname)
     if "error" in machine:
-        ret['comment'] = "State execution failed for machine {0}".format(
-            hostname)
-        ret['result'] = False
-        ret['changes'] = machine
+        if 0 in machine["error"]:
+            ret['comment'] = "No such machine {0}".format(hostname)
+            ret['changes'] = machine
+        else:
+            ret['comment'] = "State execution failed for machine {0}".format(
+                hostname)
+            ret['result'] = False
+            ret['changes'] = machine
         return ret
 
     if machine["status_name"] != "Ready":
@@ -327,10 +346,14 @@ def select_boot_disk(hostname, name):
 
     machine = __salt__['maasng.get_machine'](hostname)
     if "error" in machine:
-        ret['comment'] = "State execution" \
-                         "failed for machine {0}".format(hostname)
-        ret['result'] = False
-        ret['changes'] = machine
+        if 0 in machine["error"]:
+            ret['comment'] = "No such machine {0}".format(hostname)
+            ret['changes'] = machine
+        else:
+            ret['comment'] = "State execution" \
+                             "failed for machine {0}".format(hostname)
+            ret['result'] = False
+            ret['changes'] = machine
         return ret
 
     if machine["status_name"] != "Ready":

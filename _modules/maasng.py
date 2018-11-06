@@ -121,11 +121,16 @@ def get_machine(hostname):
     .. code-block:: bash
 
         salt-call maasng.get_machine server_hostname
+
+    Error codes:
+        0 : Machine not found
     """
     try:
         return list_machines()[hostname]
     except KeyError:
-        return {"error": "Machine not found on MaaS server"}
+        return {"error":
+                       { 0: "Machine not found" }
+               }
 
 
 def list_machines(status_filter=None):
