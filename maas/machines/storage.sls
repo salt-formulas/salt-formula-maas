@@ -56,7 +56,7 @@ maas_machines_storage_set_bootable_disk_{{ machine_name }}_{{ machine.disk_layou
 maas_machine_{{ machine_name }}_{{ disk_name }}:
   maasng.disk_partition_present:
     - hostname: {{ machine_name }}
-    - disk: {{ disk_name }}
+    - name: {{ disk_name }}
     - partition_schema: {{ disk.get("partition_schema", {}) }}
 
 {%- endif %}

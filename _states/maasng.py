@@ -149,7 +149,7 @@ def raid_present(hostname, name, level, devices=[], partitions=[],
     return ret
 
 
-def disk_partition_present(hostname, disk, partition_schema={}):
+def disk_partition_present(hostname, name, partition_schema={}):
     '''
     Ensure that the disk has correct partititioning schema
 
@@ -169,7 +169,7 @@ def disk_partition_present(hostname, disk, partition_schema={}):
     ret = {'name': hostname,
            'changes': {},
            'result': True,
-           'comment': 'Disk layout {0} presented'.format(disk)}
+           'comment': 'Disk layout {0} presented'.format(name)}
 
     machine = __salt__['maasng.get_machine'](hostname)
     if "error" in machine:
@@ -189,10 +189,10 @@ def disk_partition_present(hostname, disk, partition_schema={}):
 
     if __opts__['test']:
         ret['result'] = None
-        ret['comment'] = 'Partition schema will be changed on {0}'.format(disk)
+        ret['comment'] = 'Partition schema will be changed on {0}'.format(name)
         return ret
 
-    partitions = __salt__['maasng.list_partitions'](hostname, disk)
+    partitions = __salt__['maasng.list_partitions'](hostname, name)
 
     # Calculate actual size in bytes from provided data
     for part_name, part in partition_schema.iteritems():
@@ -204,8 +204,8 @@ def disk_partition_present(hostname, disk, partition_schema={}):
         for part_name, part in partition_schema.iteritems():
             LOG.info('validated {0}'.format(part["calc_size"]))
             LOG.info('validated {0}'.format(
-                int(partitions[disk+"-"+part_name.split("-")[-1]]["size"])))
-            if part["calc_size"] == int(partitions[disk+"-"+part_name.split("-")[-1]]["size"]):
+                int(partitions[name+"-"+part_name.split("-")[-1]]["size"])))
+            if part["calc_size"] == int(partitions[name+"-"+part_name.split("-")[-1]]["size"]):
                 LOG.info('validated')
                 # TODO validate size (size from maas is not same as calculate?)
                 # TODO validate mount
@@ -221,7 +221,7 @@ def disk_partition_present(hostname, disk, partition_schema={}):
         LOG.info(partition)
         # TODO IF LVM create ERROR
         ret["changes"] = __salt__['maasng.delete_partition_by_id'](
-            hostname, disk, partition["id"])
+            hostname, name, partition["id"])
 
     LOG.info('recreating')
     for part_name, part in partition_schema.iteritems():
@@ -232,7 +232,7 @@ def disk_partition_present(hostname, disk, partition_schema={}):
         if "type" not in part:
             part["type"] = None
         ret["changes"] = __salt__['maasng.create_partition'](
-            hostname, disk, part["size"], part["type"], part["mount"])
+            hostname, name, part["size"], part["type"], part["mount"])
 
     if "error" in ret["changes"]:
         ret["result"] = False
