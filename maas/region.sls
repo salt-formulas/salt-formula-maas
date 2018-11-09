@@ -230,6 +230,8 @@ maas_region_boot_source_{{ b_name }}:
     - delete_undefined_sources: True
     - delete_undefined_sources_except_urls: {{ exclude_list }}
   {%- endif %}
+    - require_in:
+      - module: maas_wait_for_region_import_done
     - require:
       - cmd: maas_login_admin
   {%- endfor %}
