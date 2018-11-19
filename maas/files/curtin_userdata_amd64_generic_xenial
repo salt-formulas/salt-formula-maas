@@ -1,5 +1,5 @@
 {%- from "maas/map.jinja" import cluster with context %}
-{% raw %}
+{%- raw %}
 #cloud-config
 debconf_selections:
  maas: |
@@ -18,6 +18,12 @@ early_commands:
 late_commands:
   maas: [wget, '--no-proxy', {{node_disable_pxe_url|escape.json}}, '--post-data', {{node_disable_pxe_data|escape.json}}, '-O', '/dev/null']
 {% endraw %}
+
+{%- if salt['pillar.get']('maas:cluster:curtin_vars:amd64:xenial:kernel_package') %}
+kernel:
+  package: {{ pillar.maas.cluster.curtin_vars.amd64.xenial.kernel_package }}
+{%- endif %}
+
 {%- if cluster.get('saltstack_repo_key', False) %}
   {% set salt_repo_key = salt['hashutil.base64_b64encode'](cluster.saltstack_repo_key) %}
   apt_00_set_gpg: ["curtin", "in-target", "--", "sh", "-c", "echo '{{salt_repo_key}}' | base64 -d | apt-key add -"]
@@ -27,8 +33,12 @@ late_commands:
 {%- else %}
   {%- set saltstack_repo = 'deb [arch=amd64] ' + cluster.saltstack_repo_xenial -%}
 {%- endif %}
+
   apt_01_set_repo: ["curtin", "in-target", "--", "sh", "-c", "echo '{{ saltstack_repo }}' >> /etc/apt/sources.list.d/mcp_saltstack.list"]
   apt_03_update: ["curtin", "in-target", "--", "apt-get", "update"]
+{%- if salt['pillar.get']('maas:cluster:curtin_vars:amd64:xenial:extra_pkgs') %}
+  apt_04_install_pkgs: ["curtin", "in-target", "--", "apt-get", "-y", "install", "{{ pillar.maas.cluster.curtin_vars.amd64.xenial.extra_pkgs|join(' ') }}"]
+{%- endif %}
   salt_01_install: ["curtin", "in-target", "--", "apt-get", "-y", "install", "salt-minion"]
   salt_02_hostname_set: ["curtin", "in-target", "--", "echo", "{% raw %}{{node.hostname}}{% endraw %}.{{pillar.linux.system.domain}}"]
   salt_03_hostname_get: ["curtin", "in-target", "--", "sh", "-c", "echo 'id: {% raw %}{{node.hostname}}{% endraw %}.{{pillar.linux.system.domain}}' >> /etc/salt/minion.d/minion.conf"]
@@ -52,3 +62,7 @@ late_commands:
   driver_07_update_initramfs: ["curtin", "in-target", "--", "update-initramfs", "-u"]
 {{endif}}
 {% endraw %}
+
+{#
+# vim: ft=jinja
+#}

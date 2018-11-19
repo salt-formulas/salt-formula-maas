@@ -6,6 +6,13 @@ maas:
       port: 80
     role: master
     enable_iframe: True
+    cluster:
+      curtin_vars:
+        amd64:
+          xenial:
+            extra_pkgs: [ "curl", "wget" ]
+            #kernel_package: 'linux-image-virtual-hwe-16.04'
+            kernel_package: 'mc'
   region:
     enabled: true
     bind:

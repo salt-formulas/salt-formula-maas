@@ -498,7 +498,11 @@ Setup image mirror (Maas boot resources):
             filters: ['release~(xenial)', 'arch~(amd64)', 'subarch~(generic|hwe-16.04$|ga-16.04)']
           count: 1
 
-Usage of local deb repos
+Usage of local deb repos and curtin-based variables.
+
+Dict of variables ``curtin_vars:amd64:xenial: `` format, which will be passed only to:
+``/etc/maas/preseeds/curtin_userdata_amd64_generic_xenial`` accordingly.
+
 
 .. code-block:: yaml
 
@@ -520,6 +524,13 @@ Usage of local deb repos
         -----END PGP PUBLIC KEY BLOCK-----
       saltstack_repo_xenial: "deb [arch=amd64] http://${_param:local_repo_url}/ubuntu-xenial stable salt"
       saltstack_repo_trusty: "deb [arch=amd64] http://${_param:local_repo_url}/ubuntu-trusty stable salt"
+      curtin_vars:
+        amd64:
+          xenial:
+            # List of packages, to be installed directly in curtin stage.
+            extra_pkgs: [ "linux-headers-generic-hwe-16.04", "linux-image-extra-virtual-hwe-16.04" ]
+            # exact kernel pkgs name, to be passed into curtin stage.
+            kernel_package: 'linux-image-virtual-hwe-16.04'
 
 Single MAAS cluster service [multiple racks]
 
