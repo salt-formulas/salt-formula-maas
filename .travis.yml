@@ -20,9 +20,9 @@ install:
   - bundle install
 
 env:
-    - PLATFORM=epcim/salt:saltstack-ubuntu-xenial-salt-2016.3
-    - PLATFORM=epcim/salt:saltstack-ubuntu-xenial-salt-2017.7
-    - PLATFORM=epcim/salt:saltstack-ubuntu-xenial-salt-stable
+    - PLATFORM=docker-dev-local.docker.mirantis.net/epcim/salt/saltstack-ubuntu-xenial-salt-2016.3/salt:2018_11_19
+    - PLATFORM=docker-dev-local.docker.mirantis.net/epcim/salt/saltstack-ubuntu-xenial-salt-2017.7/salt:2018_11_19
+    - PLATFORM=docker-dev-local.docker.mirantis.net/epcim/salt/saltstack-ubuntu-xenial-salt-stable/salt:2018_11_19
 
 before_script:
   - set -o pipefail
