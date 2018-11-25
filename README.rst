@@ -528,9 +528,13 @@ Dict of variables ``curtin_vars:amd64:xenial: `` format, which will be passed on
         amd64:
           xenial:
             # List of packages, to be installed directly in curtin stage.
-            extra_pkgs: [ "linux-headers-generic-hwe-16.04", "linux-image-extra-virtual-hwe-16.04" ]
+            extra_pkgs:
+              enabled: true
+              pkgs: [ "linux-headers-generic-hwe-16.04", "linux-image-extra-virtual-hwe-16.04" ]
             # exact kernel pkgs name, to be passed into curtin stage.
-            kernel_package: 'linux-image-virtual-hwe-16.04'
+            kernel_package:
+              enabled: true
+              value 'linux-image-virtual-hwe-16.04'
 
 Single MAAS cluster service [multiple racks]
 

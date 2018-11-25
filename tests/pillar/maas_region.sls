@@ -10,9 +10,13 @@ maas:
       curtin_vars:
         amd64:
           xenial:
-            extra_pkgs: [ "curl", "wget" ]
-            #kernel_package: 'linux-image-virtual-hwe-16.04'
-            kernel_package: 'mc'
+            extra_pkgs:
+              enabled: true
+              pkgs: [ "curl", "wget" ]
+            kernel_package:
+              enabled: true
+              #value: 'linux-image-virtual-hwe-16.04'
+              value: 'mc'
   region:
     enabled: true
     bind:
